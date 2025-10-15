@@ -4,73 +4,9 @@
     <aside class="sidebar">
       <h2>Chanels</h2>
       <ul>
-        <li>
-          <div>C1</div>
-          <div>Chanel 1</div>
-        </li>
-        <li>
-          <div>C2</div>
-          <div>Chanel 2</div>
-        </li>
-        <li>
-          <div>C3</div>
-          <div>Chanel 3</div>
-        </li>
-        <li>
-          <div>C4</div>
-          <div>Chanel 4</div>
-        </li>
-        <li>
-          <div>C5</div>
-          <div>Chanel 5</div>
-        </li>
-        <li>
-          <div>C6</div>
-          <div>Chanel 6</div>
-        </li>
-        <li>
-          <div>C7</div>
-          <div>Chanel 7</div>
-        </li>
-        <li>
-          <div>C8</div>
-          <div>Chanel 8</div>
-        </li>
-        <li>
-          <div>C9</div>
-          <div>Chanel 9</div>
-        </li>
-        <li>
-          <div>C10</div>
-          <div>Chanel 10</div>
-        </li>
-        <li>
-          <div>C10</div>
-          <div>Chanel 10</div>
-        </li>
-        <li>
-          <div>C10</div>
-          <div>Chanel 10</div>
-        </li>
-        <li>
-          <div>C10</div>
-          <div>Chanel 10</div>
-        </li>
-        <li>
-          <div>C10</div>
-          <div>Chanel 10</div>
-        </li>
-        <li>
-          <div>C10</div>
-          <div>Chanel 10</div>
-        </li>
-        <li>
-          <div>C10</div>
-          <div>Chanel 10</div>
-        </li>
-        <li>
-          <div>C10</div>
-          <div>Chanel 10</div>
+        <li v-for="channel in channels" :key="channel.id">
+          <div>{{ channel.id }}</div>
+          <div>{{ channel.name }}</div>
         </li>
       </ul>
     </aside>
@@ -217,9 +153,14 @@ import {
   confirmPassword,
 } from 'src/stores/globalStates'
 import { useRouter } from 'vue-router'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
+import { useChannelStore } from 'src/stores/channelStore'
 
 const router = useRouter()
+const channelStore = useChannelStore()
+const channels = computed(() => channelStore.channels)
+
+console.log('Kanaly: ', channelStore.channels)
 
 const message = ref('')
 
@@ -238,6 +179,10 @@ function resizeTextarea() {
 }
 onMounted(() => {
   resizeTextarea() // run it when component is mounted to set the initial height
+
+  if(channelStore.channels.length === 0) {
+    channelStore.loadChannels()
+  }
 })
 
 // Handle log out
