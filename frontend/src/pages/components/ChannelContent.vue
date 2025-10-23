@@ -1,6 +1,6 @@
 <template>
   <div class="content">
-    <div class="selected-channel" v-if="selectedChannel">
+    <div class="selected-channel" v-if="selectedChannel && selectedChannel.messages">
         <div :style="{ backgroundColor: `var(--profile-${selectedChannel.color})`}">
           {{ selectedChannel.id }}
         </div>
