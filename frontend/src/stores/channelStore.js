@@ -63,5 +63,23 @@ export const useChannelStore = defineStore('channel', () => {
     } 
   }
 
-  return { channels, selectedChannel, loadChannels, selectChannel}
+  function sendNewMessage(senderId, text){
+    if(!selectedChannel.value)
+      return
+
+    const newId = 'M' + (selectedChannel.value.messages.length + 1)
+    const message = createMessage({
+      id: newId,
+      senderId,
+      channelId: selectedChannel.value.id,
+      text
+    })
+    
+    selectedChannel.value.messages.push(message)
+    console.log(`Message added to ${selectedChannel.value.name}: `, message)
+  }
+
+
+
+  return { channels, selectedChannel, loadChannels, selectChannel, sendNewMessage}
 })

@@ -13,8 +13,10 @@
       <div>No channel selected</div>
     </div>
 
-    <div class="messages-container">
-      <MessageContainer v-for="message in selectedChannel.messages" :key="message.id" :message="message"/>                
+    <div class="messages-outer">
+      <div class="messages-container">
+        <MessageContainer v-for="message in selectedChannel.messages" :key="message.id" :message="message"/>                
+      </div>
     </div>
   </div>
 </template>
@@ -81,12 +83,16 @@ const selectedChannel = computed(() => channelStore.selectedChannel)
   font-size: 16px;
 }
 
-.messages-container {
-  flex: 1;
-  overflow-y: auto;
+.messages-outer {
+   flex: 1;
+   display: flex;
+   flex-direction: column-reverse;
+   overflow-y: auto;
+}
 
+.messages-container {
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
 
   padding-bottom: 1rem;
 }

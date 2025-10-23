@@ -18,6 +18,7 @@
 import { ref, onMounted } from 'vue';
 import { useChannelStore } from 'src/stores/channelStore';
 
+const channelStore = useChannelStore()
 const message = ref('')
 const autoResize = ref(null)
 
@@ -31,18 +32,22 @@ function resizeTextarea() {
 onMounted(() => {
   resizeTextarea() // run it when component is mounted to set the initial height
 
-    const channelStore = useChannelStore()
   if(channelStore.channels.length === 0) {
     channelStore.loadChannels()
   }
 })
 
 function sendMessage(){
-    if(message.value.trim() === '')
-        return
+    const text = message.value.trim()
+    if(!text)
+      return
+
+    channelStore.sendNewMessage('U0', text) //! change to current user's id
 
     console.log('Sending message: ', message.value)
+    
     message.value = ''
+    resizeTextarea()
 }
 
 </script>
