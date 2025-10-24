@@ -18,8 +18,7 @@
 
           <!-- pridat login error sem cez v-if -->
 
-          <q-btn label="Sign in" @click="signinUser" color="primary" />
-
+          <q-btn type="submit" class="submit-button">Sign In</q-btn>
         </form>
 
         <p class="footer-text">
@@ -45,10 +44,10 @@ onMounted(() => {
   console.log('users', userStore.users)
 })
 
-function signinUser() {
+function handleSubmit() {
   const user = userStore.findUser(NICKNAME.value, PASSWORD.value)
 
-  if(user){
+  if (user) {
     console.log('Signing in: ', user.nickname)
     ISLOGGEDIN.value = true
 
@@ -56,16 +55,9 @@ function signinUser() {
     channelStore.loadChannels()
 
     router.push('/')
-  }
-  else{
+  } else {
     ISLOGGEDIN.value = false
   }
-}
-
-function handleSubmit() {
-  ISLOGGEDIN.value = true
-
-  router.push('/')
 }
 </script>
 
