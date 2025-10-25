@@ -21,15 +21,15 @@ export const useChannelStore = defineStore('channel', () => {
             id: 'M1',
             senderId: 'U0',
             channelId: 'C1',
-            text: 'This is Channel 1'
+            text: 'This is Channel 1',
           }),
           createMessage({
             id: 'M2',
             senderId: 'U0',
             channelId: 'C1',
-            text: 'This is a sample text.'
-          })
-        ]
+            text: 'This is a sample text.',
+          }),
+        ],
       }),
 
       createChannel({
@@ -41,43 +41,40 @@ export const useChannelStore = defineStore('channel', () => {
         members: ['U0'],
         messages: [
           createMessage({
-            id: 'M3',   //! change ID value system
+            id: 'M3', //! change ID value system
             senderId: 'U0',
             channelId: 'C2',
-            text: 'This is Channel 2'
-          })
-        ]
-      })
+            text: 'This is Channel 2',
+          }),
+        ],
+      }),
     ]
 
     selectedChannel.value = channels.value[0]
   }
 
-  function selectChannel(channelId){
-    const found = channels.value.find(c => c.id === channelId)
+  function selectChannel(channelId) {
+    const found = channels.value.find((c) => c.id === channelId)
     if (found) {
       selectedChannel.value = found
       console.log('Selected channel:', found)
-    } 
+    }
   }
 
-  function sendNewMessage(senderId, text){
-    if(!selectedChannel.value)
-      return
+  function sendNewMessage(senderId, text) {
+    if (!selectedChannel.value) return
 
     const newId = 'M' + (selectedChannel.value.messages.length + 1)
     const message = createMessage({
       id: newId,
       senderId,
       channelId: selectedChannel.value.id,
-      text
+      text,
     })
-    
+
     selectedChannel.value.messages.push(message)
     console.log(`Message added to ${selectedChannel.value.name}: `, message)
   }
 
-
-
-  return { channels, selectedChannel, loadChannels, selectChannel, sendNewMessage}
+  return { channels, selectedChannel, loadChannels, selectChannel, sendNewMessage }
 })

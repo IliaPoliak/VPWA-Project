@@ -5,28 +5,31 @@
     </div>
     <div>
       <div class="username">
-        {{ message.senderId }} <!-- user.firstname + user.lastname -->
+        {{ message.senderId }}
+        <!-- user.firstname + user.lastname -->
       </div>
-      <div class="message-text">
-        {{ message.text }}
-      </div>
+      <div class="message-text" v-html="highlight(message.text)"></div>
     </div>
   </div>
 </template>
 
-
 <script setup>
-import { defineProps } from 'vue';
+import { defineProps } from 'vue'
+
+const highlight = (text) => {
+  let result = text.replace(/\B@(\w+)/g, (match, user) => `<span class="highlight">@${user}</span>`)
+
+  return result
+}
 
 const props = defineProps({
   message: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 })
 
 // format date code
-
 </script>
 
 <style lang="scss" scoped>
@@ -35,8 +38,8 @@ const props = defineProps({
 .message {
   display: flex;
   align-items: start;
-  padding: 0.5rem 1rem;  
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 0.5rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .message:hover {
@@ -73,5 +76,17 @@ const props = defineProps({
 .message-text {
   word-break: break-word;
 }
+</style>
 
+<style lang="scss">
+.highlight {
+  background-color: rgba(75, 231, 255, 0.2);
+  color: rgb(0, 200, 255);
+  padding: 0.1rem;
+  border-radius: 3px;
+}
+
+.highlight:hover {
+  background-color: rgba(75, 231, 255, 0.3);
+}
 </style>

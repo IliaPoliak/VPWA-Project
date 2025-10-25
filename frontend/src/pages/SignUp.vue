@@ -11,19 +11,24 @@
       <h2>Sign Up</h2>
 
       <form v-on:submit.prevent="handleSubmit" class="form">
-        <input v-model="FIRSTNAME" type="text" placeholder="First Name" required />
+        <q-input v-model="FIRSTNAME" type="text" placeholder="First Name" required />
 
-        <input v-model="LASTNAME" type="text" placeholder="Last Name" required />
+        <q-input v-model="LASTNAME" type="text" placeholder="Last Name" required />
 
-        <input v-model="NICKNAME" type="text" placeholder="Nickname" required />
+        <q-input v-model="NICKNAME" type="text" placeholder="Nickname" required />
 
-        <input v-model="EMAIL" type="email" placeholder="Email" required />
+        <q-input v-model="EMAIL" type="email" placeholder="Email" required />
 
-        <input v-model="PASSWORD" type="password" placeholder="Password" required />
+        <q-input v-model="PASSWORD" type="password" placeholder="Password" required />
 
-        <input v-model="CONFIRMPASSWORD" type="password" placeholder="Confirm Password" required />
+        <q-input
+          v-model="CONFIRMPASSWORD"
+          type="password"
+          placeholder="Confirm Password"
+          required
+        />
 
-        <button type="submit" class="submit-button">Sign Up</button>
+        <q-btn type="submit" class="submit-button">Sign Up</q-btn>
       </form>
 
       <p class="footer-text">
@@ -52,14 +57,11 @@ const router = useRouter()
 
 function handleSubmit() {
   if (PASSWORD.value === CONFIRMPASSWORD.value) {
-    ISLOGGEDIN.value = true
-
-    userStore.addUser(
-      FIRSTNAME, LASTNAME, NICKNAME, EMAIL, PASSWORD
-    )
+    userStore.addUser(FIRSTNAME, LASTNAME, NICKNAME, EMAIL, PASSWORD)
 
     console.log('users: ', userStore.users)
 
+    ISLOGGEDIN.value = true
     router.push('/')
   } else {
     alert("Passwords don't match")

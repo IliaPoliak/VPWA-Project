@@ -1,37 +1,95 @@
 <template>
   <div class="content">
-    <div class="selected-channel" v-if="selectedChannel && selectedChannel.messages">
-        <div :style="{ backgroundColor: `var(--profile-${selectedChannel.color})`}">
+    <div class="top-bar" v-if="selectedChannel">
+      <div class="selected-channel">
+        <div v-bind:style="{ backgroundColor: `var(--profile-${selectedChannel.color})` }">
           {{ selectedChannel.id }}
         </div>
         <div>
           {{ selectedChannel.name }}
         </div>
+      </div>
+
+      <div class="typing">User is typing probably idk...</div>
+
+      <div class="leave">
+        <button>Leave</button>
+      </div>
     </div>
     <div v-else class="selected-channel">
       <div>--</div>
       <div>No channel selected</div>
     </div>
-
     <div class="messages-outer">
-      <div class="messages-container">
-        <MessageContainer v-for="message in selectedChannel.messages" :key="message.id" :message="message"/>                
-      </div>
+      <q-infinite-scroll @load="loadMoreMessages" reverse :offset="250" :disable="!hasMoreMessages">
+        <template v-slot:loading>
+          <div class="row justify-center q-my-md">
+            <q-spinner-dots color="primary" size="40px" />
+          </div>
+        </template>
+
+        <div class="messages-container">
+          <MessageContainer
+            v-for="message in selectedChannel.messages"
+            :key="message.id"
+            :message="message"
+          />
+        </div>
+      </q-infinite-scroll>
     </div>
-    
     <InputContainer />
   </div>
 </template>
 
-
 <script setup>
-import { useChannelStore } from 'src/stores/channelStore';
-import MessageContainer from './MessageContainer.vue';
-import { computed } from 'vue';
+import { useChannelStore } from 'src/stores/channelStore'
+import MessageContainer from './MessageContainer.vue'
 import InputContainer from './InputContainer.vue'
+import { computed, ref, watch } from 'vue'
 
 const channelStore = useChannelStore()
 const selectedChannel = computed(() => channelStore.selectedChannel)
+
+const hasMoreMessages = ref(true)
+const currentPage = ref(1)
+
+// Reset pagination when channel changes
+watch(selectedChannel, () => {
+  currentPage.value = 1
+  hasMoreMessages.value = true
+})
+
+const loadMoreMessages = async (index, done) => {
+  if (!selectedChannel.value) {
+    done(true)
+    return
+  }
+
+  try {
+    // Fetch older messages from your API
+    // Example: const olderMessages = await fetchMessages(selectedChannel.value.id, currentPage.value)
+
+    // Simulate API call for demonstration
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+    // Add messages to the store (prepend older messages)
+    // channelStore.prependMessages(selectedChannel.value.id, olderMessages)
+
+    // For demo - you'll replace this with actual logic:
+    const hasMore = currentPage.value < 5 // Replace with actual check
+
+    if (!hasMore) {
+      hasMoreMessages.value = false
+      done(true) // Stop infinite scroll
+    } else {
+      currentPage.value++
+      done() // Continue watching
+    }
+  } catch (error) {
+    console.error('Error loading messages:', error)
+    done(true) // Stop on error
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -56,16 +114,27 @@ const selectedChannel = computed(() => channelStore.selectedChannel)
   padding-bottom: 1rem;
 }
 
-.selected-channel {
+.top-bar {
   display: flex;
+  flex-direction: row;
   align-items: center;
+  justify-content: space-between;
 
   border-bottom: 1px #777 solid;
 
-  gap: 0.5rem;
   padding: 1rem;
 }
 
+/* Selected chanel container */
+.selected-channel {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 1;
+  gap: 0.5rem;
+}
+
+/* Selected chanel profile picture */
 .selected-channel div:first-child {
   height: 30px;
   width: 30px;
@@ -81,16 +150,46 @@ const selectedChannel = computed(() => channelStore.selectedChannel)
   background-color: inherit;
 }
 
+/* Selected chanel name */
 .selected-channel div:nth-child(2) {
   font-weight: bold;
   font-size: 16px;
 }
 
+.typing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.leave {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  flex: 1;
+}
+
+.leave button {
+  background-color: rgb(113, 18, 18);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-weight: bold;
+  padding: 0 1.2rem;
+  height: 2rem;
+}
+
+.leave button:hover {
+  background-color: rgba(113, 18, 18, 0.8);
+  cursor: pointer;
+}
+
 .messages-outer {
-   flex: 1;
-   display: flex;
-   flex-direction: column-reverse;
-   overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column-reverse;
+  overflow-y: auto;
 }
 
 .messages-container {

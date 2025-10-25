@@ -1,53 +1,68 @@
 <template>
-    <aside class="ChannelBar">
-      <h2>Channels</h2>
-      <ul>
-        <li v-for="channel in channels" :key="channel.id" 
-          @click="select(channel.id)" :class="{ active: selectedChannel && selectedChannel.id === channel.id }">
+  <div class="channel-bar">
+    <h2>Channels</h2>
+
+    <aside class="inner-bar">
+      <ul class="invited-chanels">
+        <li>
+          <div>IC</div>
+          <div>Channel you were invited to</div>
+        </li>
+      </ul>
+
+      <ul class="other-channels">
+        <li
+          v-for="channel in channels"
+          :key="channel.id"
+          @click="select(channel.id)"
+          :class="{ active: selectedChannel && selectedChannel.id === channel.id }"
+        >
           <div>{{ channel.id }}</div>
           <div>{{ channel.name }}</div>
         </li>
       </ul>
+
+      <div class="create">
+        <button>Create</button>
+      </div>
     </aside>
+  </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { useChannelStore } from 'src/stores/channelStore';
+import { computed } from 'vue'
+import { useChannelStore } from 'src/stores/channelStore'
 
 const channelStore = useChannelStore()
 const channels = computed(() => channelStore.channels)
 const selectedChannel = computed(() => channelStore.selectedChannel)
 
-function select(channelId){
+function select(channelId) {
   channelStore.selectChannel(channelId)
 }
 </script>
 
 <style lang="scss" scoped>
 /* --- Sidebar --- */
-.ChannelBar {
+.channel-bar {
   width: 300px;
   color: white;
   display: flex;
   flex-direction: column;
 }
 
-.ChannelBar h2 {
+.channel-bar h2 {
   margin: 0;
   padding-left: 1.2rem;
   font-size: 1.5rem;
   height: 60px;
 }
 
-.ChannelBar ul {
+.inner-bar {
   background-color: rgba(0, 0, 0, 0.4);
 
   flex: 1;
   overflow-y: auto;
-
-  padding: 1rem;
-  padding-left: 0.5rem;
 
   margin: 0;
   margin-bottom: 0.5rem;
@@ -56,9 +71,24 @@ function select(channelId){
   border: 1px $primary solid;
   border-top-left-radius: 5px;
   border-bottom-left-radius: 5px;
+
+  position: relative; /* Makes this the reference for absolute positioning of the button */
 }
 
-.ChannelBar li {
+.invited-chanels {
+  margin: 0 0;
+  padding: 1rem;
+  padding-left: 0.5rem;
+  border-bottom: 1px $primary solid;
+}
+
+.other-channels {
+  margin: 0 0;
+  padding: 1rem;
+  padding-left: 0.5rem;
+}
+
+li {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -67,12 +97,16 @@ function select(channelId){
   transition: background-color 0.1s ease;
 }
 
-.ChannelBar li:hover {
+li:hover {
   cursor: pointer;
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.ChannelBar li div:first-child {
+li.active {
+  background-color: $primary;
+}
+
+li div:first-child {
   height: 40px;
   width: 40px;
   border-radius: 9px;
@@ -85,35 +119,61 @@ function select(channelId){
   font-size: 18px;
 }
 
-.ChannelBar li:nth-child(8n + 1) div:first-child {
+.channel-bar li:nth-child(8n + 1) div:first-child {
   background-color: var(--profile-red);
 }
 
-.ChannelBar li:nth-child(8n + 2) div:first-child {
+.channel-bar li:nth-child(8n + 2) div:first-child {
   background-color: $profile-blue;
 }
 
-.ChannelBar li:nth-child(8n + 3) div:first-child {
+.channel-bar li:nth-child(8n + 3) div:first-child {
   background-color: $profile-green;
 }
 
-.ChannelBar li:nth-child(8n + 4) div:first-child {
+.channel-bar li:nth-child(8n + 4) div:first-child {
   background-color: $profile-pink;
 }
 
-.ChannelBar li:nth-child(8n + 5) div:first-child {
+.channel-bar li:nth-child(8n + 5) div:first-child {
   background-color: $profile-orange;
 }
 
-.ChannelBar li:nth-child(8n + 6) div:first-child {
+.channel-bar li:nth-child(8n + 6) div:first-child {
   background-color: $profile-light-blue;
 }
 
-.ChannelBar li:nth-child(8n + 7) div:first-child {
+.channel-bar li:nth-child(8n + 7) div:first-child {
   background-color: $profile-yellow;
 }
 
-.ChannelBar li:nth-child(8n + 8) div:first-child {
+.channel-bar li:nth-child(8n + 8) div:first-child {
   background-color: $profile-grey;
+}
+
+.create {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding-top: 1rem;
+
+  position: absolute; /* Fixed relative to .inner-bar */
+  bottom: 1rem; /* distance from bottom of container */
+  left: 0;
+}
+
+.create button {
+  background-color: rgb(0, 60, 0);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-weight: bold;
+  padding: 0 1.2rem;
+  height: 2rem;
+}
+
+.create button:hover {
+  background-color: rgba(0, 60, 0, 0.8);
+  cursor: pointer;
 }
 </style>
