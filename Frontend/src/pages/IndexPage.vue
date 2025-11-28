@@ -1,7 +1,7 @@
 <template>
   <div v-if="ISLOGGEDIN" class="layout">
     <!-- Sidebar -->
-    <!-- <ChannelBar /> -->
+    <ChannelBar />
 
     <!-- Main area -->
     <div class="main">
@@ -9,23 +9,23 @@
       <NavBar />
 
       <!-- Chat / content area -->
-      <!-- <ChannelContent /> -->
+      <ChannelContent />
     </div>
   </div>
 </template>
 
 <script setup>
 import { useRouter } from 'vue-router'
-// import ChannelBar from './components/ChannelBar.vue'
+import ChannelBar from './components/ChannelBar.vue'
 import NavBar from './components/NavBar.vue'
-// import ChannelContent from './components/ChannelContent.vue'
+import ChannelContent from './components/ChannelContent.vue'
 import { ISLOGGEDIN } from 'src/stores/globalStates'
-import { useChannelStore } from 'src/stores/channelStore'
+// import { useChannelStore } from 'src/stores/channelStore'
 
 const router = useRouter()
-const channelStore = useChannelStore()
+// const channelStore = useChannelStore()
 
-console.log('Kanaly: ', channelStore.channels)
+// console.log('Kanaly: ', channelStore.channels)
 
 // Redirect if not signed in
 if (ISLOGGEDIN.value === false) {

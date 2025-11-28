@@ -1,14 +1,14 @@
 <template>
   <div class="message">
     <div class="profile-picture">
-      {{ message.senderId }}
+      {{ message.userId }}
     </div>
     <div>
       <div class="username">
-        {{ message.senderId }}
+        {{ message.nickname }}
         <!-- user.firstname + user.lastname -->
       </div>
-      <div class="message-text" v-html="highlight(message.text)"></div>
+      <div class="message-text" v-html="highlight(message.msgText)"></div>
     </div>
   </div>
 </template>
@@ -28,6 +28,8 @@ const props = defineProps({
     required: true,
   },
 })
+
+console.log(props)
 
 // format date code
 </script>

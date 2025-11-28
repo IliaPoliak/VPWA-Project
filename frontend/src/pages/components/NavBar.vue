@@ -39,12 +39,15 @@ import {
   LASTNAME,
   NICKNAME,
   EMAIL,
-  PASSWORD,
-  CONFIRMPASSWORD,
   TOKEN,
   PROFILECOLOR,
+  SELECTEDCHANNEL,
+  PASSWORD,
+  CONFIRMPASSWORD,
+  MESSAGES,
 } from 'src/stores/globalStates'
-import { api } from 'boot/axios'
+// import { api } from 'boot/axios'
+// import { disconnectWebSocket } from 'src/stores/ws'
 
 const router = useRouter()
 
@@ -90,8 +93,13 @@ onBeforeUnmount(() => {
 })
 
 async function logOut() {
-  const token = TOKEN.value
-  if (!token) return
+  // WS HERE
+  //  disconnectWebSocket()
+
+  /*  const token = TOKEN.value
+  if (!token) {
+    return
+  }
 
   try {
     await api.post(
@@ -103,19 +111,37 @@ async function logOut() {
         },
       },
     )
-    FIRSTNAME.value = ''
-    LASTNAME.value = ''
-    PROFILECOLOR.value = ''
-    NICKNAME.value = ''
-    EMAIL.value = ''
-    PASSWORD.value = ''
-    CONFIRMPASSWORD.value = ''
-    TOKEN.value = ''
-    ISLOGGEDIN.value = false
-    router.push('/signin')
-  } catch (err) {
+*/
+
+  FIRSTNAME.value = ''
+  LASTNAME.value = ''
+  NICKNAME.value = ''
+  EMAIL.value = ''
+  TOKEN.value = ''
+  PROFILECOLOR.value = ''
+  SELECTEDCHANNEL.value = null
+  MESSAGES.value = []
+  ISLOGGEDIN.value = false
+  PASSWORD.value = ''
+  CONFIRMPASSWORD.value = ''
+
+  // Remove only the keys you persist
+  localStorage.removeItem('ISLOGGEDIN')
+  localStorage.removeItem('FIRSTNAME')
+  localStorage.removeItem('LASTNAME')
+  localStorage.removeItem('NICKNAME')
+  localStorage.removeItem('EMAIL')
+  localStorage.removeItem('TOKEN')
+  localStorage.removeItem('SELECTEDCHANNEL')
+  localStorage.removeItem('PROFILECOLOR')
+
+  console.log(ISLOGGEDIN.value)
+  console.log(typeof ISLOGGEDIN.value)
+
+  router.push('/signin')
+  /*  } catch (err) {
     console.error(err)
-  }
+  }*/
 }
 </script>
 

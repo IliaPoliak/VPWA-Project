@@ -34,10 +34,13 @@
 
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
-import { useChannelStore } from 'src/stores/channelStore'
+// import { useChannelStore } from 'src/stores/channelStore'
 import { Notify } from 'quasar'
+import { api } from 'boot/axios'
+import { NICKNAME, SELECTEDCHANNEL, MESSAGES } from 'src/stores/globalStates'
+// import { sendWSMessage } from 'src/stores/ws'
 
-const channelStore = useChannelStore()
+// const channelStore = useChannelStore()
 const message = ref('')
 const autoResize = ref(null)
 const showCommands = ref(false)
@@ -52,11 +55,10 @@ const availableCommands = [
 
 // Send message on enter, navigate commands with arrow keys
 const filteredCommands = computed(() => {
-  if (!message.value.startsWith('/')) 
-    return []
+  if (!message.value.startsWith('/')) return []
 
   const query = message.value.toLowerCase()
-  
+
   return availableCommands.filter((cmd) => cmd.name.toLowerCase().startsWith(query))
 })
 
@@ -65,17 +67,14 @@ function handleKeydown(e) {
   if (showCommands.value) {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      selectedCommandIndex.value = 
-        (selectedCommandIndex.value + 1) % filteredCommands.value.length
-    } 
-    else if (e.key === 'ArrowUp') {
+      selectedCommandIndex.value = (selectedCommandIndex.value + 1) % filteredCommands.value.length
+    } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       selectedCommandIndex.value =
         selectedCommandIndex.value === 0
           ? filteredCommands.value.length - 1
           : selectedCommandIndex.value - 1
-    } 
-    else if (e.key === 'Enter' && filteredCommands.value.length > 0) {
+    } else if (e.key === 'Enter' && filteredCommands.value.length > 0) {
       e.preventDefault()
       if (filteredCommands.value[selectedCommandIndex.value]) {
         selectCommand(filteredCommands.value[selectedCommandIndex.value])
@@ -110,8 +109,8 @@ function selectCommand(command) {
       message: '/settings',
     })
   }
-  
-  message.value = ''
+
+  message.value = ' '
 
   showCommands.value = false
 }
@@ -137,21 +136,39 @@ function resizeTextarea() {
 onMounted(() => {
   resizeTextarea() // run it when component is mounted to set the initial height
 
-  if (channelStore.channels.length === 0) {
+  /*if (channelStore.channels.length === 0) {
     channelStore.loadChannels()
-  }
+  }*/
 })
 
-function sendMessage() {
+async function sendMessage() {
   const text = message.value.trim()
-  if (!text) 
-    return
+  if (!text) return
 
-  // Handle commands
+  /* TODO: Handle commands */
 
-  channelStore.sendNewMessage('U0', text) //! change to current user's id
+  // channelStore.sendNewMessage('U0', text) //! change to current user's id
 
-  console.log('Sending message: ', message.value)
+  // Send Message
+  try {
+    const payload = {
+      nickname: NICKNAME.value,
+      channel_id: SELECTEDCHANNEL.value.id,
+      msg_text: text,
+    }
+
+    const response = await api.post('/messages', payload)
+
+    console.log('Sending message: ', response.data)
+
+    // Add new message to the list immediately
+    MESSAGES.value.push(response.data)
+
+    // Send message to web socket
+    // sendWSMessage(response.data)
+  } catch (err) {
+    console.error('Error sending message:', err)
+  }
 
   // Send notification
   Notify.create({

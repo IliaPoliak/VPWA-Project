@@ -15,7 +15,7 @@
           v-for="channel in channels"
           :key="channel.id"
           @click="select(channel.id)"
-          :class="{ active: selectedChannel && selectedChannel.id === channel.id }"
+          :class="{ active: SELECTEDCHANNEL.id === channel.id }"
         >
           <div>{{ channel.id }}</div>
           <div>{{ channel.name }}</div>
@@ -23,23 +23,80 @@
       </ul>
 
       <div class="create-channel">
-        <button>Create channel</button>
+        <button @click="createChannel()">Create channel</button>
       </div>
     </aside>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useChannelStore } from 'src/stores/channelStore'
+import { api } from 'boot/axios'
+import { NICKNAME, SELECTEDCHANNEL } from 'src/stores/globalStates'
+import { onMounted, ref } from 'vue'
+//import { createWebSocket, disconnectWebSocket } from 'src/stores/ws'
 
-const channelStore = useChannelStore()
-const channels = computed(() => channelStore.channels)
-const selectedChannel = computed(() => channelStore.selectedChannel)
+const channels = ref([])
+
+onMounted(async () => {
+  await loadChannels()
+})
+
+async function loadChannels() {
+  try {
+    const response = await api.get(`channels/${NICKNAME.value}`)
+    channels.value = response.data
+    select(channels.value[0].id)
+
+    console.log(channels.value)
+  } catch (err) {
+    console.error('Error loading channels:', err)
+  }
+}
 
 function select(channelId) {
-  channelStore.selectChannel(channelId)
+  //disconnectWebSocket()
+  SELECTEDCHANNEL.value = channels.value.find((item) => item.id === channelId)
+  //createWebSocket(SELECTEDCHANNEL.value.id)
 }
+
+const name = ref('my channel')
+const color = ref('red')
+const status = ref('public')
+
+async function createChannel() {
+  try {
+    const payload = {
+      name: name.value,
+      color: color.value,
+      status: status.value,
+      creatorNickname: NICKNAME.value,
+    }
+
+    const response = await api.post('/channels', payload)
+
+    console.log('Channel created:', response.data)
+
+    // Add new channel to the list immediately
+    channels.value.push(response.data)
+
+    // Auto-select it
+    select(response.data.id)
+
+    // Optional: redirect or update list
+  } catch (err) {
+    console.error('Error creating channel:', err)
+  }
+}
+
+// import { useChannelStore } from 'src/stores/channelStore'
+
+// const channelStore = useChannelStore()
+// const channels = computed(() => channelStore.channels)
+// const selectedChannel = computed(() => channelStore.selectedChannel)
+
+/* function select(channelId) {
+  channelStore.selectChannel(channelId)
+}*/
 </script>
 
 <style lang="scss" scoped>

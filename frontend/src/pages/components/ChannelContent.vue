@@ -1,12 +1,12 @@
 <template>
   <div class="content">
-    <div class="top-bar" v-if="selectedChannel">
+    <div class="top-bar" v-if="SELECTEDCHANNEL">
       <div class="selected-channel">
-        <div v-bind:style="{ backgroundColor: `var(--profile-${selectedChannel.color})` }">
-          {{ selectedChannel.id }}
+        <div v-bind:style="{ backgroundColor: `var(--profile-${SELECTEDCHANNEL.color})` }">
+          {{ SELECTEDCHANNEL.id }}
         </div>
         <div>
-          {{ selectedChannel.name }}
+          {{ SELECTEDCHANNEL.name }}
         </div>
       </div>
 
@@ -23,7 +23,8 @@
     </div>
 
     <div class="messages-outer">
-      <q-infinite-scroll reverse @load="loadMoreMessages"  :offset="250" :disable="!hasMoreMessages">
+      <!--
+      <q-infinite-scroll reverse @load="loadMoreMessages" :offset="250" :disable="!hasMoreMessages">
         <template v-slot:loading>
           <div class="row justify-center q-my-md">
             <q-spinner-dots color="primary" size="40px" />
@@ -38,6 +39,11 @@
           />
         </div>
       </q-infinite-scroll>
+      -->
+
+      <div class="messages-container">
+        <MessageContainer v-for="message in MESSAGES" :key="message.id" :message="message" />
+      </div>
     </div>
 
     <InputContainer />
@@ -45,19 +51,43 @@
 </template>
 
 <script setup>
-import { useChannelStore } from 'src/stores/channelStore'
+//import { useChannelStore } from 'src/stores/channelStore'
 import MessageContainer from './MessageContainer.vue'
 import InputContainer from './InputContainer.vue'
-import { computed, ref, watch } from 'vue'
+import { watch } from 'vue'
+import { api } from 'boot/axios'
+import { SELECTEDCHANNEL, MESSAGES } from 'src/stores/globalStates'
 
-const channelStore = useChannelStore()
-const selectedChannel = computed(() => channelStore.selectedChannel)
+watch(SELECTEDCHANNEL, async (newValue) => {
+  if (newValue) {
+    await loadMessages()
+  }
+})
 
-const hasMoreMessages = ref(true)
-const currentPage = ref(1)
+async function loadMessages() {
+  try {
+    const response = await api.get(`messages/${SELECTEDCHANNEL.value.id}`)
+    MESSAGES.value = response.data
+
+    console.log(MESSAGES.value)
+    console.log(SELECTEDCHANNEL.value.id)
+    console.log(SELECTEDCHANNEL.value.name)
+    console.log(SELECTEDCHANNEL.value.color)
+  } catch (err) {
+    console.error('Error loading channels:', err)
+  }
+}
+
+// const channelStore = useChannelStore()
+// const selectedChannel = computed(() => channelStore.selectedChannel)
+
+/* Infinite Scroll */
+
+//const hasMoreMessages = ref(true)
+//const currentPage = ref(1)
 
 // Reset pagination when channel changes
-watch(selectedChannel, () => {
+/* watch(selectedChannel, () => {
   currentPage.value = 1
   hasMoreMessages.value = true
 })
@@ -84,7 +114,7 @@ const loadMoreMessages = async (index, done) => {
     console.error('Error loading messages:', error)
     done(true) // Stop on error
   }
-}
+}*/
 </script>
 
 <style lang="scss" scoped>
