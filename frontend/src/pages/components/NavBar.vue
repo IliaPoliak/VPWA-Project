@@ -47,7 +47,8 @@ import {
   MESSAGES,
 } from 'src/stores/globalStates'
 // import { api } from 'boot/axios'
-// import { disconnectWebSocket } from 'src/stores/ws'
+import { disconnectWebSocket } from 'src/stores/ws'
+import { nextTick } from 'vue'
 
 const router = useRouter()
 
@@ -93,9 +94,6 @@ onBeforeUnmount(() => {
 })
 
 async function logOut() {
-  // WS HERE
-  //  disconnectWebSocket()
-
   /*  const token = TOKEN.value
   if (!token) {
     return
@@ -112,7 +110,11 @@ async function logOut() {
       },
     )
 */
+  disconnectWebSocket()
 
+  console.log(1)
+
+  ISLOGGEDIN.value = false
   FIRSTNAME.value = ''
   LASTNAME.value = ''
   NICKNAME.value = ''
@@ -121,24 +123,24 @@ async function logOut() {
   PROFILECOLOR.value = ''
   SELECTEDCHANNEL.value = null
   MESSAGES.value = []
-  ISLOGGEDIN.value = false
   PASSWORD.value = ''
   CONFIRMPASSWORD.value = ''
 
+  console.log(2)
+
   // Remove only the keys you persist
-  localStorage.removeItem('ISLOGGEDIN')
-  localStorage.removeItem('FIRSTNAME')
-  localStorage.removeItem('LASTNAME')
-  localStorage.removeItem('NICKNAME')
-  localStorage.removeItem('EMAIL')
-  localStorage.removeItem('TOKEN')
-  localStorage.removeItem('SELECTEDCHANNEL')
-  localStorage.removeItem('PROFILECOLOR')
+  localStorage.clear()
 
-  console.log(ISLOGGEDIN.value)
-  console.log(typeof ISLOGGEDIN.value)
+  console.log(3)
 
-  router.push('/signin')
+  await nextTick()
+
+  console.log(4)
+
+  router.replace('/signin')
+
+  console.log(5)
+
   /*  } catch (err) {
     console.error(err)
   }*/

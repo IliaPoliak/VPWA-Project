@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import { MESSAGES } from './globalStates'
+//import { MESSAGES } from './globalStates'
 
 export const WS_CONNECTION = ref(null)
 
@@ -17,7 +18,10 @@ export function createWebSocket(channelId) {
   WS_CONNECTION.value.onmessage = (event) => {
     const data = JSON.parse(event.data)
     console.log('Incoming WS message:', data)
-    MESSAGES.value.push(data)
+
+    if (data && data.channelId && data.msgText) {
+      MESSAGES.value.push(data)
+    }
   }
 
   WS_CONNECTION.value.onclose = () => {
@@ -37,4 +41,5 @@ export function disconnectWebSocket() {
 export function sendWSMessage(obj) {
   if (!WS_CONNECTION.value) return console.error('WS not connected')
   WS_CONNECTION.value.send(JSON.stringify(obj))
+  console.log(`brodecasting message: ${JSON.stringify(obj)}`)
 }

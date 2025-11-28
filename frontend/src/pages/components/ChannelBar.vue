@@ -33,7 +33,7 @@
 import { api } from 'boot/axios'
 import { NICKNAME, SELECTEDCHANNEL } from 'src/stores/globalStates'
 import { onMounted, ref } from 'vue'
-//import { createWebSocket, disconnectWebSocket } from 'src/stores/ws'
+import { createWebSocket, disconnectWebSocket } from 'src/stores/ws'
 
 const channels = ref([])
 
@@ -54,9 +54,14 @@ async function loadChannels() {
 }
 
 function select(channelId) {
-  //disconnectWebSocket()
+  disconnectWebSocket()
   SELECTEDCHANNEL.value = channels.value.find((item) => item.id === channelId)
-  //createWebSocket(SELECTEDCHANNEL.value.id)
+
+  if (SELECTEDCHANNEL.value.id) {
+    createWebSocket(SELECTEDCHANNEL.value.id)
+  } else {
+    console.log('error connectiong websocket')
+  }
 }
 
 const name = ref('my channel')

@@ -38,7 +38,7 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { Notify } from 'quasar'
 import { api } from 'boot/axios'
 import { NICKNAME, SELECTEDCHANNEL, MESSAGES } from 'src/stores/globalStates'
-// import { sendWSMessage } from 'src/stores/ws'
+import { sendWSMessage } from 'src/stores/ws'
 
 // const channelStore = useChannelStore()
 const message = ref('')
@@ -164,8 +164,8 @@ async function sendMessage() {
     // Add new message to the list immediately
     MESSAGES.value.push(response.data)
 
-    // Send message to web socket
-    // sendWSMessage(response.data)
+    // Brodecat message to web socket
+    sendWSMessage(response.data)
   } catch (err) {
     console.error('Error sending message:', err)
   }

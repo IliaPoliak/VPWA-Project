@@ -74,7 +74,7 @@ async function loadMessages() {
     console.log(SELECTEDCHANNEL.value.name)
     console.log(SELECTEDCHANNEL.value.color)
   } catch (err) {
-    console.error('Error loading channels:', err)
+    console.error('Error loading messages:', err)
   }
 }
 
