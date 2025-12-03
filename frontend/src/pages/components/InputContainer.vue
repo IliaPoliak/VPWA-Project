@@ -53,7 +53,6 @@ const availableCommands = [
   { name: '/settings', description: 'Open settings' },
 ]
 
-// Send message on enter, navigate commands with arrow keys
 const filteredCommands = computed(() => {
   if (!message.value.startsWith('/')) return []
 
@@ -62,7 +61,7 @@ const filteredCommands = computed(() => {
   return availableCommands.filter((cmd) => cmd.name.toLowerCase().startsWith(query))
 })
 
-// Send message on enter
+// Send message on enter, navigate commands with arrow keys
 function handleKeydown(e) {
   if (showCommands.value) {
     if (e.key === 'ArrowDown') {
@@ -144,10 +143,6 @@ onMounted(() => {
 async function sendMessage() {
   const text = message.value.trim()
   if (!text) return
-
-  /* TODO: Handle commands */
-
-  // channelStore.sendNewMessage('U0', text) //! change to current user's id
 
   // Send Message
   try {

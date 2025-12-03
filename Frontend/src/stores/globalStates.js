@@ -64,3 +64,7 @@ export function getProfileText(chanelName) {
 
   return `${firstLetter}${secondLetter}`.toUpperCase()
 }
+
+export function selectRandomColor() {
+  return AVAILABLECOLORS[Math.floor(Math.random() * AVAILABLECOLORS.length)]
+}

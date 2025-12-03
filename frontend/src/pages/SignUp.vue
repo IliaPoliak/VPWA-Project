@@ -49,7 +49,7 @@ import {
   CONFIRMPASSWORD,
   PROFILECOLOR,
   TOKEN,
-  AVAILABLECOLORS,
+  selectRandomColor,
 } from 'src/stores/globalStates'
 import { useRouter } from 'vue-router'
 import { api } from 'boot/axios'
@@ -68,7 +68,7 @@ async function handleSubmit() {
     alert('All fields are required')
   } else {
     if (PASSWORD.value.trim() === CONFIRMPASSWORD.value.trim()) {
-      let profileColor = AVAILABLECOLORS[Math.floor(Math.random() * AVAILABLECOLORS.length)]
+      let profileColor = selectRandomColor()
 
       const userData = {
         firstName: FIRSTNAME.value.trim(),

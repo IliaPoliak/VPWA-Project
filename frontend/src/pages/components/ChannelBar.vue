@@ -3,29 +3,51 @@
     <h2>Channels</h2>
 
     <aside class="inner-bar">
-      <ul class="channel-invite">
-        <li>
-          <div v-bind:style="{ backgroundColor: `var(--profile-green)` }">CI</div>
-          <div>Invite to new channel</div>
-        </li>
-      </ul>
+      <div class="channel-lists">
+        <ul class="channel-invite">
+          <li>
+            <div v-bind:style="{ backgroundColor: `var(--profile-green)` }">CI</div>
+            <div>Invite to new channel</div>
+          </li>
+        </ul>
 
-      <ul class="channels">
-        <li
-          v-for="channel in CHANNELS"
-          :key="channel.id"
-          @click="select(channel.id)"
-          :class="{ active: SELECTEDCHANNEL.id === channel.id }"
-        >
-          <div v-bind:style="{ backgroundColor: `var(--profile-${channel.color})` }">
-            {{ getProfileText(channel.name) }}
-          </div>
-          <div>{{ channel.name }}</div>
-        </li>
-      </ul>
+        <ul class="channels">
+          <li
+            v-for="channel in CHANNELS"
+            :key="channel.id"
+            @click="select(channel.id)"
+            :class="{ active: SELECTEDCHANNEL.id === channel.id }"
+          >
+            <div v-bind:style="{ backgroundColor: `var(--profile-${channel.color})` }">
+              {{ getProfileText(channel.name) }}
+            </div>
+            <div>{{ channel.name }}</div>
+          </li>
+        </ul>
+      </div>
 
       <div class="create-channel">
-        <button @click="createChannel()">Create channel</button>
+        <button @click="showPopup = true">Create channel</button>
+      </div>
+
+      <!-- Popup Overlay -->
+      <div v-if="showPopup" class="overlay">
+        <div class="popup">
+          <h3>Create new channel</h3>
+          <input type="text" v-model="name" placeholder="New channel name" />
+
+          <div>
+            <input type="radio" id="public" value="public" v-model="status" />
+            <label for="public">public</label>
+            <br />
+            <input type="radio" id="private" value="private" v-model="status" />
+            <label for="private">private</label>
+          </div>
+
+          <br />
+          <button @click="createChannel">Submit</button>
+          <button @click="showPopup = false">Cancel</button>
+        </div>
       </div>
     </aside>
   </div>
@@ -33,7 +55,13 @@
 
 <script setup>
 import { api } from 'boot/axios'
-import { NICKNAME, SELECTEDCHANNEL, getProfileText, CHANNELS } from 'src/stores/globalStates'
+import {
+  NICKNAME,
+  SELECTEDCHANNEL,
+  getProfileText,
+  CHANNELS,
+  selectRandomColor,
+} from 'src/stores/globalStates'
 import { onMounted, ref } from 'vue'
 import { createWebSocket, disconnectWebSocket } from 'src/stores/ws'
 
@@ -64,14 +92,26 @@ function select(channelId) {
   }
 }
 
-const name = ref('my channel')
+const showPopup = ref(false)
+const name = ref('')
 const color = ref('red')
 const status = ref('public')
 
 async function createChannel() {
+  if (!name.value.trim()) {
+    alert('Please enter your name')
+    return
+  }
+  if (!status.value) {
+    alert('Please select the option')
+    return
+  }
+
+  color.value = selectRandomColor()
+
   try {
     const payload = {
-      name: name.value,
+      name: name.value.trim(),
       color: color.value,
       status: status.value,
       creatorNickname: NICKNAME.value,
@@ -79,32 +119,122 @@ async function createChannel() {
 
     const response = await api.post('/channels', payload)
 
-    console.log('Channel created:', response.data)
+    if (
+      response.data.status &&
+      response.data.status !== 200 &&
+      response.data.status !== 'public' &&
+      response.data.status !== 'private'
+    ) {
+      alert(response.data.message)
+    } else {
+      console.log('Channel created:', response.data)
 
-    // Add new channel to the list immediately
-    CHANNELS.value.push(response.data)
+      // Add new channel to the list immediately
+      CHANNELS.value.push(response.data)
 
-    // Auto-select it
-    select(response.data.id)
-
-    // Optional: redirect or update list
+      // Auto-select it
+      select(response.data.id)
+    }
   } catch (err) {
     console.error('Error creating channel:', err)
   }
+
+  // Reset
+  name.value = ''
+  status.value = 'public'
+  showPopup.value = false
 }
-
-// import { useChannelStore } from 'src/stores/channelStore'
-
-// const channelStore = useChannelStore()
-// const channels = computed(() => channelStore.channels)
-// const selectedChannel = computed(() => channelStore.selectedChannel)
-
-/* function select(channelId) {
-  channelStore.selectChannel(channelId)
-}*/
 </script>
 
 <style lang="scss" scoped>
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.popup {
+  background-color: $primary-bg-1;
+  padding: 20px;
+  border-radius: 8px;
+  min-width: 250px;
+  text-align: center;
+}
+
+.popup h3 {
+  margin: 0 0 15px 0;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.popup input[type='text'] {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid $primary;
+  background-color: #222;
+  color: white;
+  border-radius: 5px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.popup div {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.popup div input[type='radio'] {
+  accent-color: $primary;
+  cursor: pointer;
+}
+
+.popup div label {
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.popup button {
+  padding: 8px 16px;
+  margin: 5px;
+  border: none;
+  border-radius: 5px;
+  background-color: $primary;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    transform 0.1s ease;
+}
+
+.popup button:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+.popup button:active {
+  transform: translateY(1px);
+}
+
+.popup button:last-child {
+  background-color: #ccc;
+  color: #333;
+}
+
+.popup button:last-child:hover {
+  background-color: #b3b3b3;
+}
+
 /* --- Sidebar --- */
 .channel-bar {
   width: 300px;
@@ -135,6 +265,14 @@ async function createChannel() {
   border-bottom-left-radius: 5px;
 
   position: relative; /* Makes this the reference for absolute positioning of the button */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.channel-lists {
+  flex: 1;
+  overflow-y: auto;
 }
 
 .channel-invite {

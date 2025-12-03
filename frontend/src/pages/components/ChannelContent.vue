@@ -51,7 +51,6 @@
 </template>
 
 <script setup>
-//import { useChannelStore } from 'src/stores/channelStore'
 import MessageContainer from './MessageContainer.vue'
 import InputContainer from './InputContainer.vue'
 import { watch } from 'vue'
