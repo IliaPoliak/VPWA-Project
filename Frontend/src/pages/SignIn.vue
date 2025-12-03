@@ -43,35 +43,7 @@ import {
 import { useRouter } from 'vue-router'
 import { api } from 'boot/axios'
 
-// import { useChannelStore } from 'src/stores/channelStore'
-// import { useUserStore } from 'src/stores/userStore'
-// import { onMounted } from 'vue'
-
-// const userStore = useUserStore()
 const router = useRouter()
-
-/*
-onMounted(() => {
-  userStore.loadUsers()
-  console.log('users', userStore.users)
-})
-*/
-
-/*function handleSubmit() {
-  const user = userStore.findUser(NICKNAME.value, PASSWORD.value)
-
-  if (user) {
-    console.log('Signing in: ', user.nickname)
-    ISLOGGEDIN.value = true
-
-    const channelStore = useChannelStore()
-    channelStore.loadChannels()
-
-    router.push('/')
-  } else {
-    ISLOGGEDIN.value = false
-  }
-}*/
 
 async function handleSubmit() {
   const credentials = {
@@ -96,7 +68,7 @@ async function handleSubmit() {
 
     router.push('/')
   } catch (err) {
-    console.error(err)
+    alert('Wrong Credentials')
     throw err
   }
 }

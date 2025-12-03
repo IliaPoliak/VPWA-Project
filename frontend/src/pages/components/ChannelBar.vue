@@ -5,7 +5,7 @@
     <aside class="inner-bar">
       <ul class="channel-invite">
         <li>
-          <div>CI</div>
+          <div v-bind:style="{ backgroundColor: `var(--profile-green)` }">CI</div>
           <div>Invite to new channel</div>
         </li>
       </ul>
@@ -17,7 +17,9 @@
           @click="select(channel.id)"
           :class="{ active: SELECTEDCHANNEL.id === channel.id }"
         >
-          <div>{{ channel.id }}</div>
+          <div v-bind:style="{ backgroundColor: `var(--profile-${channel.color})` }">
+            {{ getProfileText(channel.name) }}
+          </div>
           <div>{{ channel.name }}</div>
         </li>
       </ul>
@@ -31,7 +33,7 @@
 
 <script setup>
 import { api } from 'boot/axios'
-import { NICKNAME, SELECTEDCHANNEL } from 'src/stores/globalStates'
+import { NICKNAME, SELECTEDCHANNEL, getProfileText } from 'src/stores/globalStates'
 import { onMounted, ref } from 'vue'
 import { createWebSocket, disconnectWebSocket } from 'src/stores/ws'
 
@@ -181,6 +183,7 @@ li div:first-child {
   font-size: 18px;
 }
 
+/* 
 .channel-bar li:nth-child(8n + 1) div:first-child {
   background-color: var(--profile-red);
 }
@@ -212,6 +215,7 @@ li div:first-child {
 .channel-bar li:nth-child(8n + 8) div:first-child {
   background-color: $profile-grey;
 }
+  */
 
 .create-channel {
   width: 100%;

@@ -3,7 +3,7 @@
     <div class="top-bar" v-if="SELECTEDCHANNEL">
       <div class="selected-channel">
         <div v-bind:style="{ backgroundColor: `var(--profile-${SELECTEDCHANNEL.color})` }">
-          {{ SELECTEDCHANNEL.id }}
+          {{ getProfileText(SELECTEDCHANNEL.name) }}
         </div>
         <div>
           {{ SELECTEDCHANNEL.name }}
@@ -56,7 +56,7 @@ import MessageContainer from './MessageContainer.vue'
 import InputContainer from './InputContainer.vue'
 import { watch } from 'vue'
 import { api } from 'boot/axios'
-import { SELECTEDCHANNEL, MESSAGES } from 'src/stores/globalStates'
+import { SELECTEDCHANNEL, MESSAGES, getProfileText } from 'src/stores/globalStates'
 
 watch(SELECTEDCHANNEL, async (newValue) => {
   if (newValue) {

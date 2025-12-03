@@ -49,68 +49,61 @@ import {
   CONFIRMPASSWORD,
   PROFILECOLOR,
   TOKEN,
+  AVAILABLECOLORS,
 } from 'src/stores/globalStates'
 import { useRouter } from 'vue-router'
-//import { useUserStore } from 'src/stores/userStore'
 import { api } from 'boot/axios'
-
-//const userStore = useUserStore()
 
 const router = useRouter()
 
-/*
-function handleSubmit() {
-  if (PASSWORD.value === CONFIRMPASSWORD.value) {
-    userStore.addUser(FIRSTNAME, LASTNAME, NICKNAME, EMAIL, PASSWORD)
-
-    console.log('users: ', userStore.users)
-
-    ISLOGGEDIN.value = true
-    router.push('/')
-  } else {
-    alert("Passwords don't match")
-  }
-}
-*/
-
 async function handleSubmit() {
-  if (PASSWORD.value === CONFIRMPASSWORD.value) {
-    // TODO: implement assigning random color
-    let profileColor = 'red'
-
-    const userData = {
-      firstName: FIRSTNAME.value,
-      lastName: LASTNAME.value,
-      nickname: NICKNAME.value,
-      email: EMAIL.value,
-      password: PASSWORD.value,
-      profileColor: profileColor,
-    }
-
-    try {
-      const response = await api.post('/auth/register', userData)
-      const { user, token } = response.data
-
-      console.log(user)
-
-      NICKNAME.value = user.nickname
-      PASSWORD.value = ''
-      CONFIRMPASSWORD.value = ''
-      TOKEN.value = token.token
-      FIRSTNAME.value = user.firstName
-      LASTNAME.value = user.lastName
-      EMAIL.value = user.email
-      PROFILECOLOR.value = user.profileColor
-      ISLOGGEDIN.value = true
-      router.push('/')
-
-      return user
-    } catch (err) {
-      console.error(err)
-      throw err
-    }
+  if (
+    FIRSTNAME.value.trim() === '' ||
+    LASTNAME.value.trim() === '' ||
+    NICKNAME.value.trim() === '' ||
+    EMAIL.value.trim() === '' ||
+    PASSWORD.value.trim() === '' ||
+    CONFIRMPASSWORD.value.trim() === ''
+  ) {
+    alert('All fields are required')
   } else {
-    alert("Passwords don't match")
+    if (PASSWORD.value.trim() === CONFIRMPASSWORD.value.trim()) {
+      let profileColor = AVAILABLECOLORS[Math.floor(Math.random() * AVAILABLECOLORS.length)]
+
+      const userData = {
+        firstName: FIRSTNAME.value.trim(),
+        lastName: LASTNAME.value.trim(),
+        nickname: NICKNAME.value.trim(),
+        email: EMAIL.value.trim(),
+        password: PASSWORD.value.trim(),
+        profileColor: profileColor,
+      }
+
+      try {
+        const response = await api.post('/auth/register', userData)
+        const data = response.data
+
+        if (data.status && data.status !== 200) {
+          alert(data.message)
+        } else {
+          NICKNAME.value = data.user.nickname
+          PASSWORD.value = ''
+          CONFIRMPASSWORD.value = ''
+          TOKEN.value = data.token.token
+          FIRSTNAME.value = data.user.firstName
+          LASTNAME.value = data.user.lastName
+          EMAIL.value = data.user.email
+          PROFILECOLOR.value = data.user.profileColor
+          ISLOGGEDIN.value = true
+          router.push('/')
+        }
+      } catch (err) {
+        console.error(err)
+        throw err
+      }
+    } else {
+      alert("Passwords don't match")
+    }
   }
 }
 </script>
