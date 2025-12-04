@@ -48,6 +48,7 @@ const availableCommands = [
   { name: '/list', description: 'Show users in this channel' },
   { name: '/join channelName [private]', description: 'Create or join channel' },
   { name: '/status', description: 'Display the status of the channel you are currently in' },
+  { name: '/invite nickname', description: 'Invite user to the channel' },
 ]
 
 // Compute witch commands to show based on input
@@ -131,7 +132,47 @@ async function selectCommand(command) {
     } else {
       console.log('Error getting seleccted channel status, no channel selected')
     }
-  } else {
+  }
+  // INVITE
+  else if (message.value.startsWith('/invite')) {
+    // split the command into separate words
+    const words = message.value.trim().split(/\s+/)
+
+    const userNickname = words[1]
+
+    const payload = {
+      inviterNickname: NICKNAME.value,
+      userNickname: userNickname,
+      channelName: SELECTEDCHANNEL.value.name,
+    }
+
+    if (userNickname) {
+      try {
+        const response = await api.post('/channels/invite', payload)
+
+        // if successful
+        if (response.data.status === 201) {
+          Notify.create({
+            message: `${response.data.user} added to the ${response.data.channel} successfully`,
+          })
+        }
+        // if exeption
+        else {
+          Notify.create({
+            message: response.data.message,
+          })
+        }
+      } catch (err) {
+        console.error('Error creating channel:', err)
+      }
+    } else {
+      Notify.create({
+        message: 'Command Syntax is wrong',
+      })
+    }
+  }
+  // OTHER
+  else {
     Notify.create({
       message: `No such command: ${message.value}`,
     })
