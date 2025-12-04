@@ -31,8 +31,8 @@ router
 /* --- /channels --- */
 router
   .group(() => {
-    // GET '/channels/:nickname' -> get user's channel list
-    router.get('/:nickname', async ({ params }) => {
+    // GET '/channels/get_channels/:nickname' -> get user's channel list
+    router.get('get_channels/:nickname', async ({ params }) => {
       const user = await User.query().where('nickname', params.nickname).firstOrFail()
 
       const channels = await Channel.query()
@@ -226,7 +226,6 @@ router
   .prefix('/messages')
 
 /* Web Socket */
-
 const channelClients: Record<string, Set<any>> = {} // all web socket connections to that channel
 router.ws('/channels/:channelId', ({ ws, params }) => {
   const channelId = params.channelId

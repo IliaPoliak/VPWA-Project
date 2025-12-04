@@ -73,7 +73,7 @@ onMounted(async () => {
 
 async function loadChannels() {
   try {
-    const response = await api.get(`channels/${NICKNAME.value}`)
+    const response = await api.get(`channels/get_channels/${NICKNAME.value}`)
     CHANNELS.value = response.data
     if (CHANNELS.value[0].id) {
       selectChannel(CHANNELS.value[0].id)
