@@ -15,6 +15,8 @@ export default class extends BaseSchema {
         .inTable('channels')
         .onDelete('CASCADE')
 
+      table.unique(['user_id', 'channel_id'])
+
       table.enum('role', ['admin', 'user']).defaultTo('user')
       table.timestamp('created_at', { useTz: true }).notNullable()
       table.timestamp('updated_at', { useTz: true }).nullable()
