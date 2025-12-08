@@ -26,8 +26,8 @@ export const LASTNAME = usePersistentRef('LASTNAME')
 export const PROFILECOLOR = usePersistentRef('PROFILECOLOR')
 export const EMAIL = usePersistentRef('EMAIL')
 export const NICKNAME = usePersistentRef('NICKNAME')
-export const PASSWORD = ref([])
-export const CONFIRMPASSWORD = ref([])
+export const PASSWORD = ref('')
+export const CONFIRMPASSWORD = ref('')
 export const TOKEN = usePersistentRef('TOKEN')
 
 export const SELECTEDCHANNEL = usePersistentRef('SELECTEDCHANNEL', null)
@@ -71,13 +71,17 @@ export function selectRandomColor() {
 
 export function selectChannel(channelId) {
   disconnectWebSocket()
-  SELECTEDCHANNEL.value = CHANNELS.value.find((item) => item.id === channelId)
 
-  if (SELECTEDCHANNEL.value.id) {
-    createWebSocket(SELECTEDCHANNEL.value.id)
-  } else {
-    console.log('error connectiong websocket')
+  let found = CHANNELS.value.find((item) => item.id === channelId)
+
+  if (!found) {
+    console.warn('no channels: ', channelId)
+    SELECTEDCHANNEL.value = null
+    return
   }
+
+  SELECTEDCHANNEL.value = found
+  createWebSocket(found.id)
 }
 
 export async function createChannel(channelName, channelStatus) {

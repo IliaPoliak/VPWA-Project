@@ -246,6 +246,7 @@ router
 
 /* Web Socket */
 const channelClients: Record<string, Set<any>> = {} // all web socket connections to that channel
+/*
 router.ws('/channels/:channelId', ({ ws, params }) => {
   const channelId = params.channelId
 
@@ -292,3 +293,4 @@ router.ws('/channels/:channelId', ({ ws, params }) => {
     )
   })
 })
+*/
