@@ -47,7 +47,7 @@ import {
   MESSAGES,
 } from 'src/stores/globalStates'
 // import { api } from 'boot/axios'
-import { disconnectWebSocket } from 'src/stores/ws'
+//import { disconnectWebSocket } from 'src/stores/ws'
 import { nextTick } from 'vue'
 
 const router = useRouter()
@@ -110,8 +110,6 @@ async function logOut() {
       },
     )
 */
-  disconnectWebSocket()
-
   console.log(1)
 
   ISLOGGEDIN.value = false

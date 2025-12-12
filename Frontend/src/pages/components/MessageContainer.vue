@@ -1,23 +1,31 @@
 <template>
   <div class="message">
-    <div class="profile-picture" :style="{backgroundColor: message.profileColor, color: checkContrastColor(message.profileColor)}">
-      {{ getInitials(message.nickname) }}
+    <div class="profile-picture" 
+      :style="{
+        backgroundColor: message?.profileColor || '#555', 
+        color: checkContrastColor(message?.profileColor || '#555')
+      }"
+    >
+      {{ getInitials(message?.nickname || '?') }}
     </div>
     <div>
       <div class="username">
-        {{ message.nickname }}
+        {{ message?.nickname || 'Unknown'}}
         <!-- user.firstname + user.lastname -->
       </div>
-      <div class="message-text" v-html="highlight(message.msgText)"></div>
+      <div class="message-text" v-html="highlight(message?.msgText)"></div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { checkContrastColor, getInitials } from 'src/stores/globalStates'
-import { defineProps, computed } from 'vue'
+//import { defineProps } from 'vue'
 
 const highlight = (text) => {
+  if(!text || typeof text !== "string")
+    return ""
+
   let result = text.replace(/\B@(\w+)/g, (match, user) => `<span class="highlight">@${user}</span>`)
 
   return result

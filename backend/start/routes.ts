@@ -16,6 +16,7 @@ import Message from '#models/message'
 import User from '#models/user'
 
 import AuthController from '#controllers/auth_controller'
+import ChannelsController from '#controllers/channel_controller'
 
 
 const authController = new AuthController()
@@ -32,200 +33,15 @@ router
 /* --- /channels --- */
 router
   .group(() => {
-    // GET '/channels/get_channels/:nickname' -> get user's channel list
-    router.get('get_channels/:nickname', async ({ params }) => {
-      const nickname = params.nickname
-      const user = await User.findByOrFail('nickname', nickname)
+    router.get('get_channels/:nickname', [ChannelsController, 'listForUser']) // GET '/channels/get_channels/:nickname' -> get user's channel list
+    router.get('get_users/:channelId', [ChannelsController, 'listUsers'])     // GET '/channels/get_users/:channelId' -> get the list of users in the channel
+    router.get('/status/:channelId', [ChannelsController, 'status'])          // GET '/channels/status/:channelId'-> get channel status by channel id
 
-      const channels = await ChannelUser.query()
-      .where('user_id', user.id)
-      .preload('channel')
-  
-      const channelList = channels.map((ch) => ({
-        id: ch.channel.id,
-        name: ch.channel.name,
-        channelColor: ch.channel.channelColor,
-        status: ch.channel.status,
-        role: ch.role,
-      }))
-      
-      console.warn('channel list: ', channelList)
-/*
-      const channels = await Channel.query()
-        .join('channel_users', 'channels.id', 'channel_users.channel_id')
-        .where('channel_users.user_id', user.id)
-        .select('channels.*')
-*/
-      return channelList
-    })
+    router.post('/', [ChannelsController, 'create'])        // POST '/channels' -> create a new channel    
+    router.post('/join', [ChannelsController, 'join'])      // POST '/channels/join -> ChannelsController.join()
+    router.post('/invite', [ChannelsController, 'invite'])  // POST '/channels/invite' -> Invite user to the channel
 
-    // GET '/channels/get_users/:channelId' -> get the list of users in the channel
-    router.get('get_users/:channelId', async ({ params }) => {
-      const users = await User.query()
-        .join('channel_users', 'users.id', 'channel_users.user_id')
-        .where('channel_users.channel_id', params.channelId)
-        .select('users.*', 'channel_users.role')
-
-      let userArray = []
-
-      for (let i = 0; i < users.length; i++) {
-        userArray.push({
-          nickname: users[i].nickname,
-          role: users[i].$extras.role,
-        })
-      }
-
-      return userArray
-    })
-
-    // GET '/channels/status/:channelId'-> get channel status by channel id
-    router.get('/status/:channelId', async ({ params }) => {
-      const channel = await Channel.query().where('id', params.channelId).firstOrFail()
-
-      return { status: channel.status, name: channel.name }
-    })
-
-    // POST '/channels' -> create a new channel
-    router.post('/', async ({ request }) => {
-      // Get channel data from request
-      const { name, channelColor, status } = request.only(['name', 'channelColor', 'status'])
-
-      try {
-        // Create the channel
-        const channel = await Channel.create({
-          name,
-          channelColor,
-          status,
-        })
-
-        const user = await User.query()
-          .where('nickname', request.input('creatorNickname'))
-          .firstOrFail()
-
-        // Add the creator as admin in channel_users pivot
-        await ChannelUser.create({
-          userId: user.id,
-          channelId: channel.id,
-          role: 'admin',
-        })
-
-        return channel
-      } catch (error) {
-        // UNIQUE constraint handling
-        const uniqueViolation = error.code === '23505' // Postgres
-
-        if (uniqueViolation) {
-          const field = error.constraint
-
-          return {
-            status: 400,
-            message:
-              field === 'channels_name_unique'
-                ? 'Channel with this name alredy exists'
-                : 'Unique field already exists',
-          }
-        }
-
-        return { status: 500, message: 'Something went wrong' }
-      }
-    })
-
-    // POST '/channels/invite' -> Invite user to the channel
-    router.post('/invite', async ({ request }) => {
-      const { inviterNickname, userNickname, channelName } = request.only([
-        'inviterNickname',
-        'userNickname',
-        'channelName',
-      ])
-
-      try {
-        // get channel by ChannelName
-        const channel = await Channel.query().where('name', channelName).firstOrFail()
-
-        if (channel.status === 'private') {
-          // get row from channel_users by InviterNickname and ChannelName
-          const inviter = await User.query().where('nickname', inviterNickname).firstOrFail()
-          const inviterMembership = await ChannelUser.query()
-            .where('user_id', inviter.id)
-            .andWhere('channel_id', channel.id)
-            .firstOrFail()
-
-          if (inviterMembership.role === 'admin') {
-            // invite User to the Channnel by adding row to channel_users
-            const user = await User.query().where('nickname', userNickname).firstOrFail()
-            await ChannelUser.create({
-              userId: user.id,
-              channelId: channel.id,
-              role: 'user',
-            })
-            return {
-              status: 201,
-              message: 'User added successfully',
-              user: user.nickname,
-              channel: channel.name,
-            }
-          } else {
-            return {
-              status: 400,
-              message: 'Cant invite because only admins can invite to private channels',
-            }
-          }
-        } else {
-          const user = await User.query().where('nickname', userNickname).firstOrFail()
-          await ChannelUser.create({
-            userId: user.id,
-            channelId: channel.id,
-            role: 'user',
-          })
-          return {
-            status: 201,
-            message: 'User added successfully',
-            user: user.nickname,
-            channel: channel.name,
-          }
-        }
-      } catch (error) {
-        // TODO: if channel or any of the users dont exist send correct error message
-        return {
-          status: 500,
-          message: 'Something went wrong',
-        }
-      }
-    })
-
-    // DELETE '/channels' -> Leave channel
-    router.delete('/', async ({ request }) => {
-      const { channelId, nickname } = request.only(['channelId', 'nickname'])
-
-      try {
-        // Get the user by nickname
-        const user = await User.query().where('nickname', nickname).firstOrFail()
-
-        // Get the user's membership in the channel
-        const membership = await ChannelUser.query()
-          .where('user_id', user.id)
-          .andWhere('channel_id', channelId)
-          .firstOrFail()
-
-        if (membership.role === 'user') {
-          // Normal user leaves channel
-          await membership.delete()
-          return { status: 200, message: 'You have left the channel' }
-        } else if (membership.role === 'admin') {
-          // Admin deletes the whole channel
-          // Delete all memberships
-          await ChannelUser.query().where('channel_id', channelId).delete()
-          // Delete the channel
-          await Channel.query().where('id', channelId).delete()
-          return { status: 200, message: 'Channel deleted successfully' }
-        } else {
-          return { status: 403, message: 'Invalid role' }
-        }
-      } catch (error) {
-        console.error(error)
-        return { status: 500, message: 'Something went wrong' }
-      }
-    })
+    router.delete('/', [ChannelsController, 'leave'])   // DELETE '/channels' -> Leave channel
   })
   .prefix('/channels')
 
@@ -233,12 +49,21 @@ router
 router
   .group(() => {
     // GET messages by chanelId
-    router.get('/:channelId', async ({ params }) => {
-      const messages_per_channel = await Message.query().where('channelId', params.channelId).orderBy('id', 'asc').preload('user')
+    router.get('/:channelId', async ({params}) => {
+      const channelId = Number(params.channelId)
 
-      console.warn('messages', messages_per_channel)
+      if(!channelId || isNaN(channelId))
+        return []
 
-      let messages = messages_per_channel.map(msg => ({
+      const list = await Message
+        .query()
+        .where('channelId', channelId)
+        .preload('user')
+        .orderBy('created_at', 'asc')
+
+      console.warn('messages', list)
+
+      let messages = list.map(msg => ({
         id: msg.id,
         channelId: msg.channelId,
         nickname: msg.user.nickname,

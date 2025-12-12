@@ -6,7 +6,7 @@
         v-for="(command, index) in filteredCommands"
         :key="command.name"
         :class="['command-item', { active: index === selectedCommandIndex }]"
-        @click="selectCommand(command)"
+        @click="handleCommand(command.name)"
         @mouseenter="selectedCommandIndex = index"
       >
         <span class="command-name">{{ command.name }}</span>
@@ -27,7 +27,8 @@
     ></textarea>
     <div style="display: flex; flex-direction: column">
       <div style="flex: 1"></div>
-      <button @click="sendMessage">Send</button>
+      <!--<button @click="sendMessage">Send</button>-->
+      <button @click="handleSend">Send</button>
     </div>
   </div>
 </template>
@@ -37,12 +38,14 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { Notify } from 'quasar'
 import { api } from 'boot/axios'
 import { NICKNAME, SELECTEDCHANNEL, MESSAGES, createChannel } from 'src/stores/globalStates'
-import { sendWSMessage } from 'src/stores/ws'
+import { sendWSMessage, sendTyping } from 'src/stores/ws'
 
 const message = ref('')
 const showCommands = ref(false)
 const selectedCommandIndex = ref(0)
 const autoResize = ref(null)
+
+const text = ref('')
 
 const availableCommands = [
   { name: '/list', description: 'Show users in this channel' },
@@ -53,10 +56,10 @@ const availableCommands = [
 
 // Compute witch commands to show based on input
 const filteredCommands = computed(() => {
-  if (!message.value.startsWith('/')) return []
+  if (!message.value.startsWith('/')) 
+    return []
 
   const query = message.value.toLowerCase()
-
   return availableCommands.filter((cmd) => cmd.name.toLowerCase().startsWith(query))
 })
 
@@ -75,7 +78,8 @@ function handleKeydown(e) {
     } else if (e.key === 'Enter' && filteredCommands.value.length > 0) {
       e.preventDefault()
       if (filteredCommands.value[selectedCommandIndex.value]) {
-        selectCommand(filteredCommands.value[selectedCommandIndex.value])
+        handleCommand(filteredCommands.value[selectedCommandIndex.value].name)
+        //selectCommand(filteredCommands.value[selectedCommandIndex.value])
       }
       return
     }
@@ -83,7 +87,7 @@ function handleKeydown(e) {
 
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault()
-    sendMessage()
+    handleSend()
   }
 }
 
@@ -162,10 +166,6 @@ async function selectCommand(command) {
           console.error('Error inviting to the channel:', err)
         }
       }
-    } else {
-      Notify.create({
-        message: 'Command Syntax is wrong',
-      })
     }
   }
   // STATUS
@@ -239,10 +239,12 @@ async function selectCommand(command) {
 }
 
 watch(message, () => {
+  typing()
   if (message.value[0] === '/' && showCommands.value === false) {
     showCommands.value = true
     selectedCommandIndex.value = 0
-  } else if (message.value[0] !== '/' && showCommands.value === true) {
+  } 
+  else if (message.value[0] !== '/' && showCommands.value === true) {
     showCommands.value = false
     console.log('hide commands')
   }
@@ -259,6 +261,176 @@ function resizeTextarea() {
 onMounted(() => {
   resizeTextarea() // run it when component is mounted to set the initial height
 })
+
+function typing(){
+  if(!SELECTEDCHANNEL.value)
+    return
+  
+    sendTyping(message.value)
+}
+
+async function handleSend(){
+  const msg = message.value
+  console.log('message to send:', msg)
+  if(!msg.trim() || !SELECTEDCHANNEL.value)
+    return
+
+  // check if message is command
+  if(msg.startsWith('/')){
+    console.log('message is a command')
+    await handleCommand(msg)
+    return
+  }
+  console.warn('sending message: ', msg)
+
+  sendWSMessage(msg)
+  message.value = ""
+}
+
+async function handleCommand(input) {
+  console.log('input: ', input)
+
+  const words = input.trim().split(' ')
+  const keyword = words[0].toLowerCase()
+
+  console.log('words: ', words)
+  console.log('keyword: ', keyword)
+
+  switch(keyword){
+    case '/list':{
+      const channel = SELECTEDCHANNEL.value
+      if(!channel || !channel?.id){
+        console.log('Error getting list of users, no channel selected')
+        break
+      }
+      const channelId = SELECTEDCHANNEL.value?.id
+
+      console.log('listing...')
+      console.log('channelId: ', channelId)
+      
+      try{
+        const response = await api.get(`/channels/get_users/${channelId}`)
+        console.log('list users: ', response.data)
+
+        let notification = 'List of users in this channel: '
+
+        for(let i = 0; i < response.data.length; i++){
+          notification += `@${response.data[i].nickname} (${response.data[i].role})`
+
+          if(i !== response.data.length - 1)
+            notification += ', '
+          
+        }
+
+        Notify.create({
+          message: notification,
+        })
+      }
+      catch (err) {
+        console.error('Error getting list of users:', err)
+      }
+      
+      break
+    }
+    case '/join':{
+      console.log('joining...')
+      const channelName = words[1]
+      let channelType = ''
+
+      if(words[2] == 'private')
+        channelType = 'private'
+      else if(words[2] == 'public' || words[2] === undefined)
+        channelType = 'public'
+      else{
+        Notify.create({
+          message: 'Please enter the correct channel type (private/public)',
+        })
+        return
+      }
+
+      await api.post('/channels/join', {
+        name: channelName,
+        status: channelType,
+        nickname: NICKNAME.value
+      })      
+      break
+    }
+
+    case '/invite':{
+      
+      console.log('inviting...')
+      const userToInvite = words[1]
+      
+      await api.post('/channels/invite', {
+        inviterNickname: NICKNAME.value,
+        userNickname: userToInvite,
+        channelName: SELECTEDCHANNEL.value.name
+      })
+      break
+    }
+
+    case '/cancel':{
+      
+      console.log('cancelling...')
+      // any user that leaves the channel
+
+      await api.delete('/channels', {
+        data: {
+          channelId: SELECTEDCHANNEL.value.id,
+          nickname: NICKNAME.value
+        }
+      })
+      break
+    }
+
+    case '/quit':{
+      
+      console.log('quitting...')
+      // check if user is admin, then delete the channel
+      await api.delete('/channels', {
+        data: {
+          channelId: SELECTEDCHANNEL.value.id,
+          nickname: NICKNAME.value,
+        },
+      })
+      break
+
+    }
+
+    case '/kick':{
+      
+      console.log('kicking...')
+      const userToKick = words[1]
+      // TODO: implement backend logic for voting or admin kick 
+      console.warn(`Kicking user: ${userToKick}`)
+      break
+    }
+
+    case '/status':{
+      
+      console.log('status...')
+      if(!SELECTEDCHANNEL.value || !SELECTEDCHANNEL.value.id){
+        console.log('Error getting selected channel status, no channel selected')
+        return
+      }
+
+      try {
+        const response = await api.get(`channels/status/${SELECTEDCHANNEL.value.id}`)
+
+        Notify.create({
+          message: `Channel ${response.data.name} is ${response.data.status}`,
+        })
+      } 
+      catch (err) {
+        console.error('Error getting channel status:', err)
+      }
+      break
+    }
+
+    default:
+      console.warn('unknown command:', input)
+  }
+}
 
 async function sendMessage() {
   const text = message.value.trim()

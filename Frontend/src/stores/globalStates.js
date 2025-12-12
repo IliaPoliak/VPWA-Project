@@ -1,5 +1,5 @@
 import { ref, watch } from 'vue'
-import { createWebSocket, disconnectWebSocket } from 'src/stores/ws'
+import { initWebSocket } from 'src/stores/ws'
 import { api } from 'boot/axios'
 
 // Persist values on page refresh so it doesnt log u out
@@ -90,7 +90,7 @@ export function selectRandomColor() {
 }
 
 export function selectChannel(channelId) {
-  disconnectWebSocket()
+  //disconnectWebSocket()
 
   let found = CHANNELS.value.find((item) => item.id === channelId)
 
@@ -113,7 +113,7 @@ export function selectChannel(channelId) {
   MESSAGES.value = []
 
 
-  createWebSocket(found.id)
+  initWebSocket(found.id)
 }
 
 export async function createChannel(channelName, channelStatus) {

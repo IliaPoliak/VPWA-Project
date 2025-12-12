@@ -42,7 +42,10 @@
       -->
 
       <div class="messages-container">
-        <MessageContainer v-for="message in MESSAGES" :key="message.id" :message="message" />
+        <MessageContainer 
+          v-for="message in safeMessages" 
+          :key="message.id"
+          :message="message" />
       </div>
     </div>
 
@@ -53,7 +56,7 @@
 <script setup>
 import MessageContainer from './MessageContainer.vue'
 import InputContainer from './InputContainer.vue'
-import { watch } from 'vue'
+import { watch, computed } from 'vue'
 import { api } from 'boot/axios'
 import {
   CHANNELS,
@@ -64,11 +67,22 @@ import {
   checkContrastColor
 } from 'src/stores/globalStates'
 
-watch(SELECTEDCHANNEL, async () => {
-  if (!SELECTEDCHANNEL.value || !SELECTEDCHANNEL.value.id)
+const safeMessages = computed(() => 
+  MESSAGES.value.filter(m =>
+    m &&
+    typeof m === 'object' &&
+    m.id && 
+    m.nickname &&
+    m.profileColor &&
+    m.msgText
+  )
+)
+
+watch(SELECTEDCHANNEL, async (value) => {
+  if (!value || !value.id)
     return 
   await loadMessages()
-})
+}, {immediate: false})
 
 async function leave() {
   let channelId = SELECTEDCHANNEL.value.id
@@ -98,11 +112,16 @@ async function leave() {
 }
 
 async function loadMessages() {
-  if (!SELECTEDCHANNEL.value?.id)
+  const channelId = SELECTEDCHANNEL.value?.id
+  console.log('channelid: ', channelId)
+  if(!channelId || isNaN(channelId))
     return
   
+  //if (!SELECTEDCHANNEL.value?.id)
+  //  return
+  
   try {
-    const response = await api.get(`messages/${SELECTEDCHANNEL.value.id}`)
+    const response = await api.get(`messages/${channelId}`)
     MESSAGES.value = response.data
 
     console.log('response data', response.data)
