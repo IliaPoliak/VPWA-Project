@@ -210,14 +210,12 @@ function handleChannelUpdate(data){
       }
 
       CHANNEL_EVENT.value = {
-          type: action,
-          channelName,
-          nickname
-        }
+        type: action,
+        channelName,
+        nickname
+      }
       console.log('channel event', CHANNEL_EVENT.value)
-        
-
-      // remove channel from channel list 
+      
       break
   }
   

@@ -25,6 +25,28 @@ import { initWebSocket } from 'src/stores/ws'
 
 const router = useRouter()
 
+watch(CHANNEL_EVENT, (event) => {
+  if(!event)
+    return
+
+  switch(event.type){
+    case 'invited':
+      break
+
+    case 'kicked':
+    case 'revoked':
+      Notify.create({
+        message: `You have been removed from channel ${event.channelName}`
+      })
+      break
+
+    case 'deleted':
+      break
+  }
+
+  CHANNEL_EVENT.value = null
+})
+
 // Redirect if not signed in
 if (ISLOGGEDIN.value === false) {
   router.push('/signin')

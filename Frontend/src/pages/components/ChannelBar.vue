@@ -97,29 +97,6 @@ onMounted(async () => {
     selectChannel(CHANNELS.value[0].id)   // select the first one
 })
 
-watch(CHANNEL_EVENT, (event) => {
-  if(!event)
-    return
-
-  switch(event.type){
-    case 'invited':
-      break
-
-    case 'kicked':
-    case 'revoked':
-      Notify.create({
-        message: `You were removed from channel ${event.channelName}`
-      })
-      break
-
-    case 'deleted':
-      break
-  }
-
-  CHANNEL_EVENT.value = null
-})
-
-
 watch(CHANNELS, (newList) => {
   // no channels → reset UI
   const channel = SELECTEDCHANNEL.value

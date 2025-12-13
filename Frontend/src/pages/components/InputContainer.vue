@@ -488,6 +488,20 @@ async function handleCommand(input) {
       console.log('kicking...')
       const userToKick = words[1]
       // TODO: implement backend logic for voting or admin kick 
+      const response = await api.post('/channels/kick', {
+        channelId: SELECTEDCHANNEL.value.id,
+        voterNickname: NICKNAME.value,
+        targetNickname: userToKick
+      })
+      console.log('kick response: ', response.data)
+
+      if(response.data.status === 403 || response.data.status === 200){
+        Notify.create({
+          message: response.data.message
+        })
+        break
+      }
+      
       console.warn(`Kicking user: ${userToKick}`)
       break
     }
