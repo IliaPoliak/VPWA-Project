@@ -2,6 +2,8 @@ import { ref, watch } from 'vue'
 import { io } from 'socket.io-client'
 import { MESSAGES, CHANNELS, NICKNAME, SELECTEDCHANNEL } from './globalStates'
 import { api } from 'src/boot/axios'
+import { Notify } from 'quasar'
+import { CHANNEL_EVENT } from './channelStore'
 
 export const socket = ref(null)
 
@@ -183,13 +185,33 @@ function handleChannelUpdate(data){
     case 'kicked':
     case 'revoked':
       // TODO refine kicking logic
+      console.log('NICKNAME', NICKNAME.value)
+      const channel = CHANNELS.value.find(ch => ch.id === channelId)
+      const channelName = channel?.name ?? 'unknown'
+
+      console.log('found channel', channel)
+      console.log('chanel name', channelName)
+
+      if(nickname !== NICKNAME.value){
+        break
+      }
+
       CHANNELS.value = CHANNELS.value.filter(ch => ch.id !== channelId)
+      console.log('channelName', channelName)
       
       // empty selected channel and messages
-      if(SELECTEDCHANNEL.value?.id === channelId){
+      if(SELECTEDCHANNEL.value?.id === channelId && nickname === NICKNAME.value){
         SELECTEDCHANNEL.value = null
         MESSAGES.value = []
       }
+
+      CHANNEL_EVENT.value = {
+          type: action,
+          channelName,
+          nickname
+        }
+      console.log('channel event', CHANNEL_EVENT.value)
+        
 
       // remove channel from channel list 
       break

@@ -39,6 +39,7 @@ router
     router.post('/join', [ChannelsController, 'join'])      // POST '/channels/join -> ChannelsController.join() - join or create new channel to join
     router.post('/invite', [ChannelsController, 'invite'])  // POST '/channels/invite' -> ChannelsController.invite() - invite user to the channel
     router.post('/revoke', [ChannelsController, 'revoke'])  // POST '/channels/revoke' -> ChannelsController.revoke() - revoke membership of user in private channel (as admin)
+    router.post('/leave', [ChannelsController, 'leave'])         // POST '/channels/leave' -> ChannelController.leave() - leave the channel
 
     router.delete('/', [ChannelsController, 'leave'])   // DELETE '/channels' -> Leave channel
   })

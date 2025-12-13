@@ -1,6 +1,9 @@
 import { api } from "src/boot/axios";
 import { CHANNELS, SELECTEDCHANNEL, MESSAGES, NICKNAME} from "./globalStates";
 import { joinWSChannel } from "./ws";
+import { ref } from "vue";
+
+export const CHANNEL_EVENT = ref(null)
 
 export function selectChannel(channelId){
     const channel = CHANNELS.value.find((item) => item.id === channelId)

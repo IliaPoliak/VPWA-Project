@@ -82,7 +82,8 @@ import {
 } from 'src/stores/globalStates'
 import { onMounted, ref, watch } from 'vue'
 import { checkContrastColor } from 'src/stores/globalStates'
-import { refreshChannels, selectChannel } from 'src/stores/channelStore'
+import { CHANNEL_EVENT, refreshChannels, selectChannel } from 'src/stores/channelStore'
+import { Notify } from 'quasar'
 
 const showPopup = ref(false)
 const name = ref('')
@@ -95,6 +96,29 @@ onMounted(async () => {
   if(CHANNELS.value.length > 0)
     selectChannel(CHANNELS.value[0].id)   // select the first one
 })
+
+watch(CHANNEL_EVENT, (event) => {
+  if(!event)
+    return
+
+  switch(event.type){
+    case 'invited':
+      break
+
+    case 'kicked':
+    case 'revoked':
+      Notify.create({
+        message: `You were removed from channel ${event.channelName}`
+      })
+      break
+
+    case 'deleted':
+      break
+  }
+
+  CHANNEL_EVENT.value = null
+})
+
 
 watch(CHANNELS, (newList) => {
   // no channels → reset UI

@@ -87,6 +87,10 @@ export default class ChannelsController {
     let channel = await Channel.findBy('name', name)    // pull current channel from DB (if exists)
     let role = 'user'   // default role
 
+    if(channel && channel.status === 'private'){
+      return {status: 403, message: 'Private channel cannot be joined without invitation'}
+    }
+
     // channel does not exist - create channel
     if(!channel){
       // add new channel to DB (otherwise)
@@ -195,32 +199,45 @@ public async revoke({request}: HttpContext){
     const { channelId, nickname } = request.only(['channelId', 'nickname'])
 
     const user = await User.findByOrFail('nickname', nickname)
-    const membership = await ChannelUser
+    const member = await ChannelUser
       .query()
       .where('user_id', user.id)
       .andWhere('channel_id', channelId)
       .firstOrFail()
 
     // USER LEAVES
-    if (membership.role === 'user') {
-      await membership.delete()
+    if (member.role === 'user') {
+      await member.delete()
 
       getIO().to(String(channelId)).emit('event', {
         type: 'channelUpdate',
-        data: {action: 'left', channelId, nickname},
+        data: {
+          action: 'left', 
+          channelId, 
+          nickname
+        },
       })
 
       return {status: 200, message: 'You left the channel'}
     }
 
     // ADMIN DELETES CHANNEL
-    if(membership.role === 'admin'){
-      await ChannelUser.query().where('channel_id', channelId).delete()
-      await Channel.query().where('id', channelId).delete()
+    if(member.role === 'admin'){
+      await ChannelUser.query()
+        .where('channel_id', channelId)
+        .delete()
+
+      await Channel.query()
+        .where('id', channelId)
+        .delete()
 
       getIO().to(String(channelId)).emit('event',{
         type: 'channelUpdate',
-        data: {action: 'deleted', channelId, nickname},
+        data: {
+          action: 'deleted', 
+          channelId, 
+          nickname
+        },
       })
 
       return {status: 200, message: 'Channel deleted'}

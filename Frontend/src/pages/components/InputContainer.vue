@@ -354,16 +354,23 @@ async function handleCommand(input) {
         })
         return
       }
-
+      
       // routes.ts => POST /channels/join => ChannelController.join()
       const response = await api.post('/channels/join', {
         name: channelName,
         status: channelType,
         nickname: NICKNAME.value
-      })      
+      })     
+
+      // trying to join a private channel
+      if(response.data.status === 403){
+        Notify.create({
+          message: response.data.message
+        })
+        break
+      }
 
       const channel = response.data.channel
-
       // join web socket room
       joinWSChannel(channel.id)
 
@@ -372,7 +379,12 @@ async function handleCommand(input) {
       
       // select channel to join
       selectChannel(channel.id)
+    
       
+
+      Notify.create({
+        message: 'Failed to join channel'
+      })
       break
     }
 
@@ -433,6 +445,7 @@ async function handleCommand(input) {
         Notify.create({
           message: `You can only revoke user membership from a private channel`   // defined by assignment
         })
+        break
       }
 
       await api.post('/channels/revoke', {
@@ -449,7 +462,7 @@ async function handleCommand(input) {
       console.log('cancelling...')
       // any user that leaves the channel
 
-      await api.delete('/channels', {
+      await api.post('/channels', {
         data: {
           channelId: SELECTEDCHANNEL.value.id,
           nickname: NICKNAME.value
@@ -482,7 +495,6 @@ async function handleCommand(input) {
     }
 
     case '/status':{
-      
       console.log('status...')
       if(!SELECTEDCHANNEL.value || !SELECTEDCHANNEL.value.id){
         console.log('Error getting selected channel status, no channel selected')
