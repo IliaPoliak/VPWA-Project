@@ -6,7 +6,6 @@ import { CHANNEL_EVENT } from './channelStore'
 
 export const socket = ref(null)
 
-
 export function initWebSocket() {
   if(socket.value)
     return
@@ -18,6 +17,8 @@ export function initWebSocket() {
 
   socket.value.on('connect', () => {
     console.log('[WS] Connected:', socket.value.id)
+
+    socket.value.emit('identify', NICKNAME.value)   // user identifies itself to the socket
     
     joinAllChannels()
 
@@ -45,9 +46,7 @@ export function initWebSocket() {
   })
 }
 
-
-
-function handleEvent(type, data){
+async function handleEvent(type, data){
   switch(type){
     case 'message':
       if(data.channelId === SELECTEDCHANNEL.value?.id)
@@ -65,7 +64,7 @@ function handleEvent(type, data){
 
     case 'channelUpdate':
       console.log('[WS] channel updated: ', data)
-      handleChannelUpdate(data) // handle specific type of channel update
+      await handleChannelUpdate(data) // handle specific type of channel update
       break
     
     case 'error':
@@ -146,77 +145,117 @@ export function updateStatus(status){
   })
 }
 
-function handleChannelUpdate(data){
-  const {action, channelId, nickname} = data
+async function handleChannelUpdate(data){
+  const {action} = data
 
   switch(action){
-    case 'joined':
+    case 'joined':{
+      const {nickname} = data
       console.log('[WS] User joined channel: ', nickname)
-      api.get(`/channels/get_channels/${NICKNAME.value}`)
-        .then(response => {
-          CHANNELS.value = response.data
-        })
-      break
 
-    case 'left':
+      const response = await api.get(`/channels/get_channels/${NICKNAME.value}`)
+      CHANNELS.value = response.data || []
+      break
+    }
+
+    case 'left':{
+      const {nickname} = data
       console.log('[WS] User left: ', nickname)
-      api.get(`/channels/get_channels/${NICKNAME.value}`)
-        .then(response => {
-          CHANNELS.value = response.data
-        })
-      break
 
-    case 'deleted':
+      const response = await api.get(`/channels/get_channels/${NICKNAME.value}`)
+      CHANNELS.value = response.data || []
+      break
+    }
+
+    case 'deleted':{
       // remove channelId from local channel storage 
+      const {channelId} = data
+      const channel = SELECTEDCHANNEL.value
+      if(!channel)
+        return
+
       CHANNELS.value = CHANNELS.value.filter(ch => ch.id !== channelId)
       
-      if(SELECTEDCHANNEL.value?.id === channelId){
+      if(channel.id === channelId){
         SELECTEDCHANNEL.value = null
         MESSAGES.value = []
       }
       break
+    }
 
-    case 'invited':
+    case 'invited':{
       // fetch channel list and push new channel
+      const {channelId, channelName: nameFromEvent, inviterNickname, targetNickname} = data
       console.log('[WS] Channel update: invite')
-      api.get(`/channels/get_channels/${NICKNAME.value}`)
-        .then(response => {
-          CHANNELS.value = response.data
-        })
+
+      const response = await api.get(`/channels/get_channels/${NICKNAME.value}`)
+      CHANNELS.value = response.data || []
+      
+      const channel = CHANNELS.value.find(ch => ch.id === channelId) || null
+      console.warn('channel: ', channel)
+      if(!channel)
+        return
+      
+      const channelName = nameFromEvent || channel.name || 'unknown'
+
+      if(NICKNAME.value === targetNickname){
+        CHANNEL_EVENT.value = {
+          type: 'invited',
+          channelName,
+          nickname: inviterNickname
+        }
+      }
+      else if(NICKNAME.value === inviterNickname){
+        CHANNEL_EVENT.value = {
+          type: 'invited_sent',
+          channelName,
+          nickname: targetNickname
+        }
+      }
+      console.log('new channel event: ', CHANNEL_EVENT.value)
       break
+    }
 
     case 'kicked':
     case 'revoked':{
-      // TODO refine kicking logic
+
+      const {channelId, nickname} = data
+      const isCurrentUser = nickname === NICKNAME.value
       console.log('NICKNAME', NICKNAME.value)
-      const channel = CHANNELS.value.find(ch => ch.id === channelId)
-      const channelName = channel?.name ?? 'unknown'
 
-      console.log('found channel', channel)
-      console.log('chanel name', channelName)
+      const response = await api.get(`/channels/get_channels/${NICKNAME.value}`)
+      CHANNELS.value = response.data || []
 
-      if(nickname !== NICKNAME.value){
-        break
+      if(isCurrentUser){
+        if(SELECTEDCHANNEL.value?.id === channelId){
+          SELECTEDCHANNEL.value = null
+          MESSAGES.value = []
+        }
+
+        CHANNEL_EVENT.value = {
+          type: action,
+          channelName: data.channelName,
+          nickname
+        }
       }
 
-      CHANNELS.value = CHANNELS.value.filter(ch => ch.id !== channelId)
-      console.log('channelName', channelName)
-      
-      // empty selected channel and messages
-      if(SELECTEDCHANNEL.value?.id === channelId && nickname === NICKNAME.value){
-        SELECTEDCHANNEL.value = null
-        MESSAGES.value = []
+      if(!isCurrentUser && data.action === 'revoked'){
+        CHANNEL_EVENT.value = {
+          type: 'revoking',
+          channelName: data.channelName,
+          nickname
+        }
       }
 
-      CHANNEL_EVENT.value = {
-        type: action,
-        channelName,
-        nickname
+      if(!isCurrentUser && data.action === 'kicked'){
+        CHANNEL_EVENT.value = {
+          type: 'kicking',
+          channelName: data.channelName,
+          nickname
+        }
       }
-      console.log('channel event', CHANNEL_EVENT.value)
-      
-      break
     }
+    break
   }
   
   console.log('[WS] Channel update applied: ', action)

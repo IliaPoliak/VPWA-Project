@@ -5,6 +5,7 @@ import { getIO } from "#start/socket"
 import { HttpContext } from '@adonisjs/core/http'
 import Message from "#models/message"
 import { CHANNEL_ROLE, selectRandomColor } from "./channels_controller.js"
+import { messages } from "@vinejs/vine/defaults"
 
 export class MemberController{
     
@@ -53,35 +54,64 @@ export class MemberController{
     } 
 
     public async invite({request}: HttpContext){
-        const {inviterNickname, userNickname, channelName} = request.only(['inviterNickname', 'userNickname', 'channelName'])
+        const {inviterNickname, targetNickname, channelName} = request.only(['inviterNickname', 'targetNickname', 'channelName'])
 
         const channel = await Channel.findByOrFail('name', channelName)
         const inviter = await User.findByOrFail('nickname', inviterNickname)
-        const user = await User.findByOrFail('nickname', userNickname)
+        const target = await User.findByOrFail('nickname', targetNickname)
 
         // Private channel check
         const inviterMembership = await ChannelUser.query().where('user_id', inviter.id).andWhere('channel_id', channel.id).first()
+        if(!inviterMembership)
+            return {status: 403, message: 'You are not a member of this channel'}
 
-        if (!inviterMembership || inviterMembership.role !== CHANNEL_ROLE.ADMIN){
-        return {status: 403, message: 'Only admins can invite to private channels'}
+        if (channel.status === 'private' && 
+            inviterMembership.role !== CHANNEL_ROLE.ADMIN){
+            return {status: 403, message: 'Only admins can invite to private channels'}
         }
 
         await ChannelUser.firstOrCreate({
-        userId: user.id,
-        channelId: channel.id,
+            userId: target.id,
+            channelId: channel.id,
         })
 
         // WS broadcast
         const io = getIO()
-        io!.emit('event', {
+
+        io!.to(`user:${target.nickname}`).emit('event', {
             type: 'channelUpdate',
             data: {
                 action: 'invited',
                 channelId: channel.id,
-                nickname: user.nickname,
+                channelName: channel.name,
+                inviterNickname,
+                targetNickname: target.nickname
             },
         })
 
+        io!.to(`user:${inviterNickname}`).emit('event', {
+            type: 'channelUpdate',
+            data: {
+                action: 'invited_sent',
+                channelId: channel.id,
+                channelName: channel.name,
+                targetNickname: target.nickname
+            },
+        })
+
+
+/*
+        io!.to(String(channel.id)).emit('event', {
+            type: 'channelUpdate',
+            data: {
+                action: 'invited',
+                channelId: channel.id,
+                channelName: channel.name,
+                inviterNickname,
+                userNickname: target.nickname
+            },
+        })
+*/
         return {status: 201, message: 'User invited successfully'}
     } 
 
@@ -110,10 +140,21 @@ export class MemberController{
           .delete()
     
         const io = getIO()
+
+        io!.to(`user:${userNickname}`).emit('event', {
+            type: 'channelUpdate',
+            data: {
+                action: 'revoked',
+                channelId,
+                channelName: channel.name,
+                nickname: userNickname,
+            }
+        })
+
         io!.to(String(channelId)).emit('event', {
           type: 'channelUpdate',
           data: {
-            action: 'revoked',
+            action: 'left',
             nickname: userNickname,
             channelId
           }

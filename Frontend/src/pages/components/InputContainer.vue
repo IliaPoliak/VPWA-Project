@@ -27,7 +27,6 @@
     ></textarea>
     <div style="display: flex; flex-direction: column">
       <div style="flex: 1"></div>
-      <!--<button @click="sendMessage">Send</button>-->
       <button @click="handleSend">
         <div class="text-lg">Send</div>
         <div class="text-sm">&gt;</div>
@@ -49,44 +48,84 @@ const showCommands = ref(false)
 const selectedCommandIndex = ref(0)
 const autoResize = ref(null)
 
-const availableCommands = [
-  { name: '/list', description: 'Show users in this channel' },
-  { name: '/join channelName [private]', description: 'Create or join channel' },
-  { name: '/status', description: 'Display the status of the channel you are currently in' },
-  { name: '/invite nickname', description: 'Invite user to the channel' },
+const AVALIABLE_COMMANDS = [
+  { name: '/list', descrtiption: 'List users in channel', roles: ['user', 'admin'] },
+  { name: '/join channelName [private]', descrtiption: 'Join existing channel or create new channel', roles: ['user', 'admin'] },
+  { name: '/status', descrtiption: 'Show channel status', roles: ['user', 'admin'] },
+  { name: '/cancel', descrtiption: 'Leave channel (admin deletes)', roles: ['user', 'admin'] },
+
+  { name: '/invite nickname', descrtiption: 'Invite user to channel', public: true, roles: ['admin'] },
+  { name: '/revoke nickname', descrtiption: 'Revoke membership of user (private channel)', roles: ['admin'] },
+  { name: '/kick username', descrtiption: 'Kick user (admin kicks immediately)', roles: ['user', 'admin'] },
+  { name: '/quit', descrtiption: 'Delete channel', roles: ['admin'] },
 ]
+
+function getCommands(){
+  const channel = SELECTEDCHANNEL.value
+
+  if(!channel){
+    return AVALIABLE_COMMANDS.filter(cmd => ['/list', '/join channelName [private]'].includes(cmd.name))
+  }
+
+  const role = channel.role
+  const status = channel.status   // public / private
+
+  // find all commands applicable to current context (public/private and user/admin)
+  return AVALIABLE_COMMANDS.filter(cmd => {
+    if(cmd.roles && !cmd.roles.includes(role))  // role of command does not match with role of channel
+      return false
+
+    if(status === 'public')     // current channel is public
+      if(cmd.public)  return true   // command usable only in public channel
+      if(cmd.private) return false  // command usable only in private channel
+
+    if(status === 'private')    // current channel is private
+      if(cmd.private && cmd.private.includes(role)) return true // command usable private and has role attached
+      if(cmd.public)  return false    // command usable in public
+
+    return true
+  })
+}
 
 // Compute witch commands to show based on input
 const filteredCommands = computed(() => {
-  if (!message.value.startsWith('/')) 
+  if(!message.value.startsWith('/')) 
     return []
 
-  const query = message.value.toLowerCase()
-  return availableCommands.filter((cmd) => cmd.name.toLowerCase().startsWith(query))
+  const query = message.value.slice(1).toLowerCase()
+
+  return getCommands()
+    .filter(cmd => cmd.name.startsWith(query))
+    .map(cmd => ({
+      name: `${cmd.name}`,
+      description: cmd.descrtiption
+    }))
 })
 
 // Send message on enter, navigate commands with arrow keys
 function handleKeydown(e) {
-  if (showCommands.value) {
-    if (e.key === 'ArrowDown') {
+  const hasCommands = showCommands.value && filteredCommands.value.length > 0
+
+  if(hasCommands){
+    if(e.key === 'ArrowDown'){
       e.preventDefault()
       selectedCommandIndex.value = (selectedCommandIndex.value + 1) % filteredCommands.value.length
-    } else if (e.key === 'ArrowUp') {
+    } 
+    if(e.key === 'ArrowUp'){
       e.preventDefault()
-      selectedCommandIndex.value =
-        selectedCommandIndex.value === 0
-          ? filteredCommands.value.length - 1
-          : selectedCommandIndex.value - 1
-    } else if (e.key === 'Enter' && filteredCommands.value.length > 0) {
+      selectedCommandIndex.value = (selectedCommandIndex.value - 1 + filteredCommands.value.length) % filteredCommands.value.length
+    } 
+    if (e.key === 'Enter'){
       e.preventDefault()
-      if (filteredCommands.value[selectedCommandIndex.value]) {
-        handleCommand(filteredCommands.value[selectedCommandIndex.value].name)
-      }
+      const cmd = filteredCommands.value[selectedCommandIndex.value]
+      if(cmd)
+        handleCommand(cmd.name)
+
       return
     }
   }
 
-  if (e.key === 'Enter' && !e.shiftKey) {
+  if(e.key === 'Enter' && !e.shiftKey){
     e.preventDefault()
     handleSend()
   }
@@ -94,11 +133,11 @@ function handleKeydown(e) {
 
 watch(message, () => {
   typing()
-  if (message.value[0] === '/' && showCommands.value === false) {
+  if(message.value.startsWith('/') && !showCommands.value){
     showCommands.value = true
     selectedCommandIndex.value = 0
   } 
-  else if (message.value[0] !== '/' && showCommands.value === true) {
+  else if(message.value.startsWith('/') && showCommands.value){
     showCommands.value = false
     console.log('hide commands')
   }
@@ -120,7 +159,7 @@ function typing(){
   if(!SELECTEDCHANNEL.value)
     return
   
-    sendTyping(message.value)
+  sendTyping(message.value)
 }
 
 async function handleSend(){
@@ -151,42 +190,6 @@ async function handleCommand(input) {
   console.log('keyword: ', keyword)
 
   switch(keyword){
-    case '/list':{
-      const channel = SELECTEDCHANNEL.value
-      if(!channel || !channel?.id){
-        console.log('Error getting list of users, no channel selected')
-        break
-      }
-      const channelId = SELECTEDCHANNEL.value?.id
-
-      console.log('listing...')
-      console.log('channelId: ', channelId)
-      
-      try{
-        const response = await api.get(`/channels/get_users/${channelId}`)
-        console.log('list users: ', response.data)
-
-        let notification = 'List of users in this channel: '
-
-        for(let i = 0; i < response.data.length; i++){
-          notification += `@${response.data[i].nickname} (${response.data[i].role})`
-
-          if(i !== response.data.length - 1)
-            notification += ', '
-          
-        }
-
-        Notify.create({
-          message: notification,
-        })
-      }
-      catch (err) {
-        console.error('Error getting list of users:', err)
-      }
-      
-      break
-    }
-
     case '/join':{
       console.log('joining...')
       const channelName = words[1]
@@ -272,7 +275,7 @@ async function handleCommand(input) {
       // routes.ts => /channels/invite => ChannelController.invite()
       await api.post('/channels/invite', {
         inviterNickname: NICKNAME.value,
-        userNickname: userToInvite,
+        targetNickname: userToInvite,
         channelName: SELECTEDCHANNEL.value.name
       })
 
@@ -310,17 +313,17 @@ async function handleCommand(input) {
       break
     }
 
-    case '/cancel':{
+    case '/kick':{
       
-      console.log('cancelling...')
-      // any user that leaves the channel
-      const channel = SELECTEDCHANNEL.value 
-      console.log('channel id', channel.id) 
-      console.log('nickname.value', NICKNAME.value)
-      await api.post('/channels/cancel', {
-        channelId: channel.id,
-        nickname: NICKNAME.value
+      console.log('kicking...')
+      const userToKick = words[1]
+      await api.post('/channels/kick', {
+        channelId: SELECTEDCHANNEL.value.id,
+        voterNickname: NICKNAME.value,
+        targetNickname: userToKick
       })
+      
+      console.warn(`Kicking user: ${userToKick}`)
       break
     }
 
@@ -336,26 +339,53 @@ async function handleCommand(input) {
 
     }
 
-    case '/kick':{
+    case '/cancel':{
       
-      console.log('kicking...')
-      const userToKick = words[1]
-      // TODO: implement backend logic for voting or admin kick 
-      const response = await api.post('/channels/kick', {
-        channelId: SELECTEDCHANNEL.value.id,
-        voterNickname: NICKNAME.value,
-        targetNickname: userToKick
+      console.log('cancelling...')
+      // any user that leaves the channel
+      const channel = SELECTEDCHANNEL.value 
+      console.log('channel id', channel.id) 
+      console.log('nickname.value', NICKNAME.value)
+      await api.post('/channels/cancel', {
+        channelId: channel.id,
+        nickname: NICKNAME.value
       })
-      console.log('kick response: ', response.data)
+      break
+    }
 
-      if(response.data.status === 403 || response.data.status === 200){
-        Notify.create({
-          message: response.data.message
-        })
+    case '/list':{
+      const channel = SELECTEDCHANNEL.value
+      if(!channel || !channel?.id){
+        console.log('Error getting list of users, no channel selected')
         break
       }
+      const channelId = SELECTEDCHANNEL.value?.id
+
+      console.log('listing...')
+      console.log('channelId: ', channelId)
       
-      console.warn(`Kicking user: ${userToKick}`)
+      try{
+        const response = await api.get(`/channels/get_users/${channelId}`)
+        console.log('list users: ', response.data)
+
+        let notification = 'List of users in this channel: '
+
+        for(let i = 0; i < response.data.length; i++){
+          notification += `@${response.data[i].nickname} (${response.data[i].role})`
+
+          if(i !== response.data.length - 1)
+            notification += ', '
+          
+        }
+
+        Notify.create({
+          message: notification,
+        })
+      }
+      catch (err) {
+        console.error('Error getting list of users:', err)
+      }
+      
       break
     }
 

@@ -33,14 +33,33 @@ watch(CHANNEL_EVENT, (event) => {
 
   switch(event.type){
     case 'invited':
+      Notify.create({
+        message: `You were invited into channel ${event.channelName}`
+      })
       break
 
+    case 'invited_sent':{
+      Notify.create({
+        message: `You invited ${event.nickname} to channel ${event.channelName}`
+      })
+      break
+    }
+
     case 'kicked':
-    case 'revoked':
+    case 'revoked':{
       Notify.create({
         message: `You have been removed from channel ${event.channelName}`
       })
       break
+    }
+    
+    case 'kicking':
+    case 'revoking':{
+      Notify.create({
+        message: `You have revoked the membership of ${event.nickname} from this channel`
+      })
+      break
+    }
 
     case 'deleted':
       break

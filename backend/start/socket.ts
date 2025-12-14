@@ -21,6 +21,11 @@ app.ready(() => {
   io.on('connection', (socket: Socket) => {
     console.log('Client connected: ', socket.id)
 
+    socket.on('identify', (nickname: string) => {
+        socket.join(`user:${nickname}`)
+        console.log(`[WS] ${nickname} joined a user room`)
+    })
+
     socket.on('event', async(packet) => {
         const {type, data} = packet
 
@@ -48,12 +53,11 @@ app.ready(() => {
 
 async function handleJoinChannel(socket: Socket, data: any){
     const {channelId} = data
-
     if(!channelId)
         return
 
-    socket.join(String(channelId))
-    console.log(`[IOnew] ${socket.id} joined channel ${channelId}`)
+    socket.join(`channel:${channelId}`)
+    console.log(`[IO] ${socket.id} joined room ${channelId}`)
 }
 
 async function handleSendMessage(socket: Socket, data: any){
@@ -77,7 +81,7 @@ async function handleSendMessage(socket: Socket, data: any){
 
     await message.load('user')
 
-    io!.to(String(channelId)).emit('event', {
+    io!.to(`channel:${channelId}`).emit('event', {
         type: 'message',
         data: {
             id: message.id,
@@ -98,7 +102,7 @@ async function handleTyping(socket: Socket, data: any){
     if(!channelId)
         return
 
-    io!.to(String(channelId)).emit('event', {
+    io!.to(`channel:${channelId}`).emit('event', {
         type: 'typing',
         data: {
             channelId, 
@@ -132,7 +136,7 @@ async function handleStatusUpdate(socket: Socket, data: any){
 async function handleChannelUpdate(socket: Socket, data: any){
     const {action, channelId, nickname} = data
 
-    io!.to(String(channelId)).emit('event', {
+    io!.to(`channel:${channelId}`).emit('event', {
         type: 'channelUpdate',
         data: {
             action, 
