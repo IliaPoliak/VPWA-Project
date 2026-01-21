@@ -4,7 +4,6 @@
 
     <aside class="inner-bar">
       <div class="channel-lists">
-
         <div v-if="CHANNELS.length === 0" class="q-pa-md text-center text-grey">
           <q-icon name="info" size="lg" class="q-mb-sm" />
           <div>No channels available.</div>
@@ -13,31 +12,31 @@
 
         <div v-else>
           <ul class="channels">
-          <li
-            v-for="channel in CHANNELS"
-            :key="channel.id"
-            @click="selectChannel(channel.id)"
-            class="channel"
-            :class="{invited: channel.isInvited, selected: SELECTEDCHANNEL?.id === channel.id}"
-          >
-            <div v-bind:style="{ backgroundColor: channel.channelColor, color: checkContrastColor(channel.channelColor) }">
-              {{ getInitials(channel.name) }}
-            </div>
-            <div>{{ channel.name }}</div>
-          </li>
+            <li
+              v-for="channel in CHANNELS"
+              :key="channel.id"
+              @click="selectChannel(channel.id)"
+              class="channel"
+              :class="{ invited: channel.isInvited, selected: SELECTEDCHANNEL?.id === channel.id }"
+            >
+              <div
+                v-bind:style="{
+                  backgroundColor: channel.channelColor,
+                  color: checkContrastColor(channel.channelColor),
+                }"
+              >
+                {{ getInitials(channel.name) }}
+              </div>
+              <div>{{ channel.name }}</div>
+            </li>
           </ul>
         </div>
-        
       </div>
 
       <div class="create-channel">
         <button @click="showPopup = true">
-          <div id="create-channel-lg-text">
-            Create channel
-          </div>
-          <div id="create-channel-sm-text">
-            +
-          </div>
+          <div id="create-channel-lg-text">Create channel</div>
+          <div id="create-channel-sm-text">+</div>
         </button>
       </div>
 
@@ -71,7 +70,7 @@ import {
   checkContrastColor,
   getInitials,
   MESSAGES,
-  SELECTEDCHANNEL
+  SELECTEDCHANNEL,
 } from 'src/stores/globalStates'
 import { onMounted, ref, watch } from 'vue'
 import { refreshChannels, selectChannel } from 'src/stores/channelStore'
@@ -84,22 +83,21 @@ onMounted(async () => {
   await refreshChannels()
 
   // channels successfully loaded
-  if(CHANNELS.value.length > 0)
-    selectChannel(CHANNELS.value[0].id)   // select the first one
+  if (CHANNELS.value.length > 0) selectChannel(CHANNELS.value[0].id) // select the first one
 })
 
 watch(CHANNELS, (newList) => {
   // no channels → reset UI
   const channel = SELECTEDCHANNEL.value
 
-  if(!newList || newList.length === 0){
+  if (!newList || newList.length === 0) {
     SELECTEDCHANNEL.value = null
     MESSAGES.value = []
     return
   }
 
   // selected channel removed → choose fallback
-  if(channel && !newList.find((ch) => ch.id === channel.id)){
+  if (channel && !newList.find((ch) => ch.id === channel.id)) {
     selectChannel(newList[0].id)
   }
 })
@@ -289,7 +287,7 @@ li:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-li.active {
+li.selected {
   background-color: $primary;
 }
 
@@ -332,36 +330,34 @@ li div:first-child {
   cursor: pointer;
 }
 
-#create-channel-sm-text{
+#create-channel-sm-text {
   display: none;
 }
 
-@media (max-width: 800px){
-  .channel-bar{
+@media (max-width: 800px) {
+  .channel-bar {
     width: 90px;
   }
 
-  li div:nth-child(2){
+  li div:nth-child(2) {
     display: none;
   }
 
-  .create-channel button{
+  .create-channel button {
     width: 60px;
     margin-left: -8px;
   }
 
-  .create-channel{
-    bottom: 0.5rem
+  .create-channel {
+    bottom: 0.5rem;
   }
 
-  #create-channel-lg-text{
+  #create-channel-lg-text {
     display: none;
   }
 
-  #create-channel-sm-text{
+  #create-channel-sm-text {
     display: block;
   }
 }
-
-
 </style>
